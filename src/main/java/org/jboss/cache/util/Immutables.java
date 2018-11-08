@@ -23,8 +23,19 @@ package org.jboss.cache.util;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Factory for generating immutable type wrappers.
@@ -63,9 +74,6 @@ public class Immutables
     */
    public static <T> List<T> immutableListCopy(List<? extends T> list)
    {
-      if (list == null) return null;
-      if (list.isEmpty()) return Collections.emptyList();
-      if (list.size() == 1) return Collections.<T> singletonList(list.get(0));
       return new ImmutableListCopy<T>(list);
    }
 
@@ -123,13 +131,9 @@ public class Immutables
     */
    public static <T> Set<T> immutableSetCopy(Set<? extends T> set)
    {
-      if (set == null) return null;
-      if (set.isEmpty()) return Collections.emptySet();
-      if (set.size() == 1) return Collections.<T> singleton(set.iterator().next());
-
       Set<? extends T> copy = attemptKnownSetCopy(set);
       if (copy == null)
-         copy  = attemptClone(set);
+         attemptClone(set);
       if (copy == null)
          // Set uses Collection copy-ctor
          copy = attemptCopyConstructor(set, Collection.class);
@@ -159,13 +163,6 @@ public class Immutables
     */
    public static <K, V> Map<K, V> immutableMapCopy(Map<? extends K, ? extends V> map)
    {
-      if (map == null) return null;
-      if (map.isEmpty()) return Collections.emptyMap();
-      if (map.size() == 1)
-      {
-         Map.Entry<? extends K, ? extends V> me = map.entrySet().iterator().next();
-         return Collections.<K, V> singletonMap(me.getKey(), me.getValue());
-      }
       Map<? extends K, ? extends V> copy = attemptKnownMapCopy(map);
 
       if (copy == null)
@@ -186,9 +183,6 @@ public class Immutables
     */
    public static <T> Collection<T> immutableCollectionCopy(Collection<? extends T> collection)
    {
-      if (collection == null) return null;
-      if (collection.isEmpty()) return Collections.emptySet();
-      if (collection.size() == 1) return Collections.<T> singleton(collection.iterator().next());
       Collection<? extends T> copy = attemptKnownSetCopy(collection);
       if (copy == null)
          copy = attemptClone(collection);
@@ -205,10 +199,10 @@ public class Immutables
    {
       if (map instanceof FastCopyHashMap)
          return (T) ((FastCopyHashMap) map).clone();
-      if (map instanceof LinkedHashMap)
-         return (T) ((LinkedHashMap) map).clone();
       if (map instanceof HashMap)
          return (T) ((HashMap) map).clone();
+      if (map instanceof LinkedHashMap)
+         return (T) ((LinkedHashMap) map).clone();
       if (map instanceof TreeMap)
          return (T) ((TreeMap) map).clone();
 
@@ -218,10 +212,10 @@ public class Immutables
    @SuppressWarnings("unchecked")
    private static <T extends Collection> T attemptKnownSetCopy(T set)
    {
-      if (set instanceof LinkedHashSet)
-         return (T) ((LinkedHashSet) set).clone();
       if (set instanceof HashSet)
          return (T) ((HashSet) set).clone();
+      if (set instanceof LinkedHashSet)
+         return (T) ((LinkedHashSet) set).clone();
       if (set instanceof TreeSet)
          return (T) ((TreeSet) set).clone();
 
@@ -239,7 +233,6 @@ public class Immutables
          }
          catch (Exception e)
          {
-            // do nothing.
          }
       }
 
@@ -255,7 +248,6 @@ public class Immutables
       }
       catch (Exception e)
       {
-         // do nothing.
       }
 
       return null;

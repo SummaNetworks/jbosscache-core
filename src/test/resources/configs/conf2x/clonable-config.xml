@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+      Cache configuration file that attempts to utilize all known elements.
+      Intent here is not to create such a cache; rather it is to create
+      a Configuration and then see if that Configuration can be cloned.
+      Basically just for testing the clone() method of the various
+      configuration elements.
+-->
+
+<server>
+
+   <mbean code="org.jboss.cache.jmx.CacheJmxWrapper"
+          name="jboss.cache:service=testTreeCache">
+
+      <attribute name="TransactionManagerLookupClass">org.jboss.cache.transaction.GenericTransactionManagerLookup
+      </attribute>
+
+      <attribute name="NodeLockingScheme">OPTIMISTIC</attribute>
+      <attribute name="IsolationLevel">SERIALIZABLE</attribute>
+      <attribute name="CacheMode">REPL_SYNC</attribute>
+
+      <attribute name="ClusterName">CloneCluster</attribute>
+
+      <attribute name="MultiplexerStack">udp</attribute>
+
+      <attribute name="FetchInMemoryState">false</attribute>
+      <attribute name="StateRetrievalTimeout">3</attribute>
+      <attribute name="SyncReplTimeout">2</attribute>
+      <attribute name="LockAcquisitionTimeout">1</attribute>
+
+
+      <attribute name="BuddyReplicationConfig">
+         <config>
+            <buddyReplicationEnabled>true</buddyReplicationEnabled>
+            <buddyLocatorClass>org.jboss.cache.buddyreplication.NextMemberBuddyLocator</buddyLocatorClass>
+            <buddyLocatorProperties>
+               numBuddies = 11
+               ignoreColocatedBuddies = true
+            </buddyLocatorProperties>
+
+            <buddyPoolName>cloneGroup</buddyPoolName>
+            <buddyCommunicationTimeout>7</buddyCommunicationTimeout>
+
+            <autoDataGravitation>false</autoDataGravitation>
+            <dataGravitationRemoveOnFind>true</dataGravitationRemoveOnFind>
+            <dataGravitationSearchBackupTrees>true</dataGravitationSearchBackupTrees>
+
+         </config>
+      </attribute>
+
+      <attribute name="EvictionPolicyConfig">
+         <config>
+            <attribute name="wakeUpIntervalSeconds">45</attribute>
+            <attribute name="eventQueueSize">4</attribute>
+            <attribute name="policyClass">org.jboss.cache.eviction.LRUPolicy</attribute>
+
+            <!-- Cache wide default -->
+            <region name="/_default_">
+               <attribute name="maxNodes">5000</attribute>
+               <attribute name="timeToLiveSeconds">1000</attribute>
+               <attribute name="maxAge">15000</attribute>
+            </region>
+            <region name="/fifo" policyClass="org.jboss.cache.eviction.FIFOPolicy">
+               <attribute name="maxNodes">5000</attribute>
+            </region>
+            <region name="/mru" policyClass="org.jboss.cache.eviction.MRUPolicy">
+               <attribute name="maxNodes">10000</attribute>
+            </region>
+            <region name="/lfu" policyClass="org.jboss.cache.eviction.LFUPolicy">
+               <attribute name="maxNodes">5000</attribute>
+               <attribute name="minNodes">4000</attribute>
+            </region>
+         </config>
+      </attribute>
+
+      <attribute name="CacheLoaderConfig">
+         <config>
+            <!-- if passivation is true, only the first cache loader is used; the rest are ignored -->
+            <passivation>false</passivation>
+            <preload>/</preload>
+            <shared>true</shared>
+
+            <!-- we can now have multiple cache loaders, which get chained -->
+            <cacheloader>
+               <class>org.jboss.cache.loader.FileCacheLoader</class>
+               <properties>
+                  location=/tmp/FileCacheLoader
+               </properties>
+               <async>false</async>
+               <!-- only one cache loader in the chain may set fetchPersistentState to true.-->
+               <fetchPersistentState>true</fetchPersistentState>
+               <ignoreModifications>false</ignoreModifications>
+               <singletonStore>
+                  <enabled>false</enabled>
+                  <properties>
+                     pushStateWhenCoordinator=true
+                     pushStateWhenCoordinatorTimeout=5000
+                  </properties>
+               </singletonStore>
+            </cacheloader>
+
+            <cacheloader>
+               <class>org.jboss.cache.loader.bdbje.BdbjeCacheLoader</class>
+               <properties>
+                  location=/tmp/BdbjeCacheLoader
+               </properties>
+               <async>false</async>
+               <!-- only one cache loader in the chain may set fetchPersistentState to true.-->
+               <fetchPersistentState>false</fetchPersistentState>
+               <ignoreModifications>false</ignoreModifications>
+               <singletonStore>
+                  <enabled>false</enabled>
+                  <properties>
+                     pushStateWhenCoordinator=true
+                     pushStateWhenCoordinatorTimeout=5000
+                  </properties>
+               </singletonStore>
+            </cacheloader>
+
+            <cacheloader>
+               <class>org.jboss.cache.loader.jdbm.JdbmCacheLoader</class>
+               <properties>
+                  location=/tmp/JdbmCacheLoader
+               </properties>
+               <async>false</async>
+               <!-- only one cache loader in the chain may set fetchPersistentState to true.-->
+               <fetchPersistentState>false</fetchPersistentState>
+               <ignoreModifications>false</ignoreModifications>
+               <singletonStore>
+                  <enabled>false</enabled>
+                  <properties>
+                     pushStateWhenCoordinator=true
+                     pushStateWhenCoordinatorTimeout=5000
+                  </properties>
+               </singletonStore>
+            </cacheloader>
+
+            <cacheloader>
+               <class>org.jboss.cache.loader.JDBCCacheLoader</class>
+               <properties>
+                  cache.jdbc.driver=com.foo.jdbc.Driver
+                  cache.jdbc.url=foo://driver
+                  cache.jdbc.user=sa
+                  cache.jdbc.password=secret
+               </properties>
+               <async>false</async>
+               <!-- only one cache loader in the chain may set fetchPersistentState to true.-->
+               <fetchPersistentState>false</fetchPersistentState>
+               <ignoreModifications>false</ignoreModifications>
+               <singletonStore>
+                  <enabled>false</enabled>
+                  <properties>
+                     pushStateWhenCoordinator=true
+                     pushStateWhenCoordinatorTimeout=5000
+                  </properties>
+               </singletonStore>
+            </cacheloader>
+
+            <cacheloader>
+               <class>org.jboss.cache.loader.TcpDelegatingCacheLoader</class>
+               <properties>
+                  host=127.0.0.1\nport=12121
+               </properties>
+               <async>false</async>
+               <!-- only one cache loader in the chain may set fetchPersistentState to true.-->
+               <fetchPersistentState>false</fetchPersistentState>
+               <ignoreModifications>false</ignoreModifications>
+               <singletonStore>
+                  <enabled>false</enabled>
+                  <properties>
+                     pushStateWhenCoordinator=true
+                     pushStateWhenCoordinatorTimeout=5000
+                  </properties>
+               </singletonStore>
+            </cacheloader>
+
+            <cacheloader>
+               <class>org.jboss.cache.loader.ClusteredCacheLoader</class>
+               <properties>
+                  timeout=500
+               </properties>
+               <async>false</async>
+               <!-- only one cache loader in the chain may set fetchPersistentState to true.-->
+               <fetchPersistentState>false</fetchPersistentState>
+               <ignoreModifications>false</ignoreModifications>
+               <singletonStore>
+                  <enabled>false</enabled>
+                  <properties>
+                     pushStateWhenCoordinator=true
+                     pushStateWhenCoordinatorTimeout=5000
+                  </properties>
+               </singletonStore>
+            </cacheloader>
+
+         </config>
+      </attribute>
+
+   </mbean>
+
+
+</server>

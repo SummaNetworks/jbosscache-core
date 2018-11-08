@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- file used for functional test of the xml parser -->
+
+<jbosscache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns="urn:jboss:jbosscache-core:config:3.1">
+
+
+   <locking isolationLevel="REPEATABLE_READ" lockParentForChildInsertRemove="true" lockAcquisitionTimeout="10234"
+            nodeLockingScheme="mvcc" writeSkewCheck="false" concurrencyLevel="21"/>
+
+   <transaction transactionManagerLookupClass="org.jboss.cache.transaction.GenericTransactionManagerLookup"
+                syncRollbackPhase="true" syncCommitPhase="true"/>
+
+   <jmxStatistics enabled="false"/>
+
+   <startup regionsInactiveOnStartup="true"/>
+   <shutdown hookBehavior="REGISTER"/>
+   <listeners asyncPoolSize="5" asyncQueueSize="100000"/>
+   <invocationBatching enabled="true"/>
+
+   <!-- serialization related configuration, used for replication and cache loading -->
+   <serialization objectInputStreamPoolSize="12" objectOutputStreamPoolSize="14" version="1.2.4"
+                  marshallerClass="some.Clazz" useLazyDeserialization="true" useRegionBasedMarshalling="true"/>
+
+   <clustering mode="replication" clusterName="JBossCache-cluster">
+      <async useReplQueue="false" serializationExecutorPoolSize="250" serializationExecutorQueueSize="5000000"/>
+      <stateRetrieval timeout="15124" fetchInMemoryState="true"  nonBlocking="false"/>
+      <buddy enabled="true" poolName="myBuddyPoolReplicationGroup" communicationTimeout="2000">
+         <dataGravitation auto="true" removeOnFind="true" searchBackupTrees="true"/>
+         <locator class="org.jboss.cache.buddyreplication.NextMemberBuddyLocator">
+            <properties>
+               numBuddies = 1
+               ignoreColocatedBuddies = true
+            </properties>
+         </locator>
+      </buddy>
+      <jgroupsConfig>
+         <PING timeout="2000" num_initial_members="3"/>
+         <MERGE2 max_interval="30000" min_interval="10000"/>
+         <FD_SOCK/>
+         <FD timeout="10000" max_tries="5" shun="true"/>
+         <VERIFY_SUSPECT timeout="1500"/>
+         <pbcast.NAKACK use_mcast_xmit="false" gc_lag="0"
+                        retransmit_timeout="300,600,1200,2400,4800"
+                        discard_delivered_msgs="true"/>
+         <UNICAST timeout="300,600,1200,2400,3600"/>
+         <pbcast.STABLE stability_delay="1000" desired_avg_gossip="50000"
+                        max_bytes="400000"/>
+         <pbcast.GMS print_local_addr="true" join_timeout="5000" shun="false"
+                     view_bundling="true" view_ack_collection_timeout="5000"/>
+         <FRAG2 frag_size="60000"/>
+         <pbcast.STREAMING_STATE_TRANSFER use_reading_thread="true"/>
+         <!-- <pbcast.STATE_TRANSFER/> -->
+         <pbcast.FLUSH timeout="0"/>
+      </jgroupsConfig>
+   </clustering>
+
+   <eviction wakeUpInterval="5">
+      <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm" eventQueueSize="200000">
+         <property name="maxNodes" value="5000" />
+         <property name="timeToLive" value="1000" />
+      </default>
+      <region name="/org/jboss/data">
+         <property name="timeToLive" value="1002" />
+      </region>
+      <region name="/org/jboss/xyz" algorithmClass="org.jboss.cache.eviction.MRUAlgorithm" eventQueueSize="21">
+         <property name="maxNodes" value="2103" />
+         <property name="minTimeToLive" value="22" />
+      </region>
+   </eviction>
+
+   <!-- this should be deprecated in 3.0 and should be replaced with CacheLoaderConfig-->
+   <loaders passivation="true" shared="true">
+      <preload>
+         <node fqn="/a/b/c"/>
+         <node fqn="/f/r/s"/>
+      </preload>
+
+      <!-- we can now have multiple cache loaders, which get chained -->
+      <loader class="org.jboss.cache.loader.JDBCCacheLoader" async="true" fetchPersistentState="true"
+              ignoreModifications="true" purgeOnStartup="true">
+         <properties>
+            cache.jdbc.table.name=jbosscache
+            cache.jdbc.table.create=true
+            cache.jdbc.table.drop=true
+         </properties>
+         <singletonStore enabled="true" class="org.jboss.cache.loader.SingletonStoreCacheLoader">
+            <properties>
+               pushStateWhenCoordinator=true
+               pushStateWhenCoordinatorTimeout=20000
+            </properties>
+         </singletonStore>
+      </loader>
+   </loaders>
+
+   <!-- this is new behavior added within 3.x only. it support configuring custom interceptors through configurations -->
+   <customInterceptors>
+      <interceptor position="first" class="org.jboss.cache.config.parsing.custominterceptors.AaaCustomInterceptor">
+         <property name="attrOne" value="value1" />
+         <property name="attrTwo" value="value2" />
+      </interceptor>
+      <interceptor position="last" class="org.jboss.cache.config.parsing.custominterceptors.BbbCustomInterceptor"/>
+      <interceptor index="3" class="org.jboss.cache.config.parsing.custominterceptors.AaaCustomInterceptor"/>
+      <interceptor before="org.jboss.cache.interceptors.CallInterceptor"
+                   class="org.jboss.cache.config.parsing.custominterceptors.BbbCustomInterceptor"/>
+      <interceptor after="org.jboss.cache.interceptors.CallInterceptor"
+                   class="org.jboss.cache.config.parsing.custominterceptors.AaaCustomInterceptor"/>
+   </customInterceptors>
+
+   <!-- the number of threads to use for asynchronous cache listeners - defaults to 1 -->
+</jbosscache>

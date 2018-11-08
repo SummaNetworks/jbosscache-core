@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article lang="en">
+   <articleinfo>
+      <title>JBoss Cache Core Edition Tutorial</title>
+      <!-- Release version and date -->
+       <releaseinfo>Release 3.1.0 Cascabel</releaseinfo>
+       <pubdate>April 2009</pubdate>
+
+      <author>
+         <firstname>Manik</firstname>
+         <surname>Surtani</surname>
+         <email>manik AT jboss DOT org</email>
+      </author>
+
+      <author>
+         <firstname>Galder</firstname>
+         <surname>Zamarreño</surname>
+         <email>galder DOT zamarreno AT jboss DOT com</email>
+      </author>      
+
+      <!-- copyright info -->
+      <copyright>
+         <year>2005</year>
+         <year>2006</year>
+         <year>2007</year>
+         <year>2008</year>
+         <year>2009</year> 
+         <holder>JBoss, a division of Red Hat Inc., and all authors as named.</holder>
+      </copyright>
+
+   </articleinfo>
+
+   <section>
+      <title>Introduction</title>
+
+      <para>
+         JBoss Cache is an in-memory replicated, transactional, and fine-grained cache.
+         This tutorial focuses on the core Cache API. Please refer to the accompanying tutorial
+         for POJO Cache, if it is the POJO Cache API you are interested in.
+      </para>
+      <para>
+         For details of configuration, usage and APIs, please refer to the
+         <ulink url="http://labs.jboss.org/jbosscache/docs/index.html">user manuals</ulink>.
+      </para>
+   </section>
+
+   <section>
+      <title>What You Will Learn</title>
+
+      <itemizedlist>
+         <listitem>
+            <para>Cache creation and modification</para>
+         </listitem>
+
+         <listitem>
+            <para>Replication of state</para>
+         </listitem>
+
+         <listitem>
+            <para>Transactions</para>
+         </listitem>
+      </itemizedlist>
+   </section>
+
+   <section>
+      <title>Configuration</title>
+
+      <para>First download the JBoss Cache 3.x distribution from
+         <ulink url="http://labs.jboss.org/jbosscache/download/index.html">the download page</ulink>. You will need the ALL distribution (
+         <literal>jbosscache-core-3.X.Y.GA-all.zip</literal>).
+         Unzip it, and you will get a directory containing the distribution, such as
+         <literal>jbosscache-core-3.X.Y</literal>
+         .
+         For the sake of this tutorial, I will refer to this as
+         <literal>${JBOSSCACHE_HOME}</literal>
+         .
+      </para>
+
+      <para>The configuration files are located in
+         <literal>${JBOSSCACHE_HOME}/etc</literal>. You can
+         modify the behavior of the cache by editing the various configuration files.
+      </para>
+
+      <itemizedlist>
+         <listitem>
+            <para>
+               <literal>log4j.xml</literal> - Logging output. You can enable logging, specify log levels or
+               change the name and path to the log file.
+            </para>
+         </listitem>
+
+         <listitem>
+            <para>
+               <literal>config-samples/total-replication.xml</literal> - Cache configuration file used for this tutorial.
+            </para>
+         </listitem>
+      </itemizedlist>
+   </section>
+
+   <section>
+      <title>Script</title>
+
+      <para>The only script needed for this tutorial is the
+         <literal>${JBOSSCACHE_HOME}/tutorial/build.xml</literal>
+         ant script. You also need to have
+         <ulink url="http://ant.apache.org/">Apache Ant</ulink>
+         installed for running the tutorial GUI.
+      </para>
+   </section>
+
+   <section>
+      <title>Running The Tutorial GUI</title>
+
+      <para>
+         The GUI is run by:
+         <itemizedlist>
+            <listitem>Changing to the
+               <literal>${JBOSSCACHE_HOME}/tutorial</literal>
+               directory (e.g.,<literal>cd ${JBOSSCACHE_HOME}/tutorial</literal>)</listitem>
+            <listitem>And then running the ant script (e.g.,<literal>ant run</literal>)</listitem>
+         </itemizedlist>
+      </para>
+
+      <para>
+         This will cause a GUI window to appear, giving you a tree view of the cache in the top pane and a BeanShell
+         view of the JVM in the lower pane.
+      </para>
+      <para>
+         The BeanShell view is preset with the following variables:
+         <itemizedlist>
+            <listitem>
+               <literal>cache</literal>
+               - a reference to the <literal>org.jboss.cache.Cache</literal> interface, used by the GUI instance.
+            </listitem>
+            <listitem>
+               <literal>root</literal>
+               - a reference to the root <literal>org.jboss.cache.Node</literal> instance for the above cache.
+            </listitem>
+            <listitem>
+               <literal>transactionManager</literal>
+               - a reference to the registered <literal>javax.transaction.TransactionManager</literal> instance.
+            </listitem>
+         </itemizedlist>
+         The references made available to the BeanShell window point to the same cache instance used by the tree view in
+         the
+         GUI above.
+      </para>
+
+      <para>
+         To run the GUI as a replicated tutorial, it is useful to start another command line window and run the ant script
+         again as you did above. Now you will have two cache instances running in two separate GUIs, replicating state
+         to each other.
+      </para>
+
+   </section>
+
+   <section>
+      <title>Tutorials</title>
+      Note that it is recommended that you shut down and restart the GUI for each of the following tutorials, to
+      ensure clean caches every time.
+      <section>
+         <title>Caches and Nodes</title>
+         <para>
+            For this tutorial, start a single instance of the GUI. In this tutorial, we will:
+
+            <itemizedlist>
+               <listitem>Create nodes under the root node.</listitem>
+               <listitem>Remove nodes under the root node, both individually and recursively.</listitem>
+               <listitem>Add and remove data from nodes.</listitem>
+            </itemizedlist>
+         </para>
+
+         <para>1. Set up the Fqns you need. In the BeanShell pane, create 3 Fqn variables:</para>
+         <programlisting role="JAVA"><![CDATA[
+   childFqn1 = Fqn.fromString("/child1");
+   childFqn2 = Fqn.fromString("/child2");
+   childFqn3 = Fqn.fromString("/child2/child3");
+                    ]]></programlisting>
+
+         <para>2. Create child nodes under the root node.</para>
+         <programlisting role="JAVA"><![CDATA[
+   child1 = root.addChild(childFqn1);
+   child2 = root.addChild(childFqn2);
+   child3 = root.addChild(childFqn3);
+                     ]]></programlisting>
+
+
+         <para>3. Query the nodes.</para>
+         <programlisting role="JAVA"><![CDATA[
+   root.hasChild(childFqn1); // should return true
+   child2.hasChild(childFqn3.getLastElement()); // should return true
+   child3.getParent(); // should return child2
+   child2.getParent(); // should return root
+                 ]]></programlisting>
+
+         <para>4. Put some data in the nodes. By selecting the nodes in the tree view, you should see the contents of
+            each node.
+         </para>
+         <programlisting role="JAVA"><![CDATA[
+   child1.put("key1", "value1");
+   child1.put("key2", "value2");
+   child2.put("key3", "value3");
+   child2.put("key4", "value4");
+   child3.put("key5", "value5");
+   child3.put("key6", "value6");
+                 ]]></programlisting>
+
+         <para>5. Query some of the data.</para>
+
+         <programlisting role="JAVA"><![CDATA[
+   child1.getKeys();
+   child2.getData();
+                 ]]></programlisting>
+
+         <para>6. Remove some data in the nodes.</para>
+
+         <programlisting role="JAVA"><![CDATA[
+   child1.remove("key1");
+   child2.remove("key3");
+   child3.clearData();
+                 ]]></programlisting>
+
+         <para>7. Delete nodes</para>
+
+         <programlisting role="JAVA"><![CDATA[
+   root.removeChild(childFqn1); // will also remove any data held under child1
+   root.removeChild(childFqn2); // will recursively remove child3 as well.
+                 ]]></programlisting>
+
+         <para>
+            In addition to the above, you should refer to the
+            <literal>Cache</literal>
+            and
+            <literal>Node</literal>
+            <ulink url="http://labs.jboss.org/portal/jbosscache/docs/index.html">API docs</ulink>
+            and try out the APIs in the BeanShell script.
+         </para>
+      </section>
+
+      <section>
+         <title>Replication</title>
+         <para>
+            For this tutorial, start two instances instance of the GUI. Repeat the exercises in the previous
+            tutorial,
+            only alternating between the two GUI windows when creating/removing nodes or adding/removing data. This
+            demonstrates
+            how the two cache instances in the two GUIs are kept in sync.
+         </para>
+      </section>
+
+      <section>
+         <title>Transactions</title>
+         <para>
+            For this tutorial, start two instances instance of the GUI. Repeat the exercises in the previous
+            tutorial,
+            only starting transactions before creating/removing nodes or adding/removing data. This will depict how
+            replication only occurs on transaction boundaries. Try rolling back a few transactions as well, to see how
+            nothing gets replicated in these cases.
+            Below is the sample code for managing transactions:
+         </para>
+         <programlisting role="JAVA"><![CDATA[
+              tm = cache.getTransactionManager();
+              tm.begin();
+              // do operations here
+              tm.commit(); // or tm.rollback();              
+            ]]></programlisting>
+      </section>
+
+   </section>
+
+</article>

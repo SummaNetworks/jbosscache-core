@@ -1,0 +1,337 @@
+<chapter id="configuration">
+   <title>Configuration</title>
+
+   <section>
+      <title>Configuration Overview</title>
+
+      <para>
+         The
+         <literal>org.jboss.cache.config.Configuration</literal>
+         class (along with its <link linkend="configuration.elements">component parts</link>)
+         is a Java Bean that encapsulates the configuration of the <literal>Cache</literal>
+         and all of its architectural elements (cache loaders, evictions policies, etc.)
+      </para>
+
+      <para>
+         The <literal>Configuration</literal> exposes numerous properties which
+         are summarized in the <link linkend="configuration_reference">configuration reference</link>
+         section of this book and many of which are discussed in later chapters. Any time you see a configuration option
+         discussed in this book, you can assume that the <literal>Configuration</literal>
+         class or one of its component parts exposes a simple property setter/getter for that configuration option.
+      </para>
+
+   </section>
+
+   <section id="configuration.creation">
+      <title>Creating a
+         <literal>Configuration</literal>
+      </title>
+
+      <para>
+         As discussed in the <link linkend="api.create_start">User API section</link>,
+         before a <literal>Cache</literal> can be created, the <literal>CacheFactory</literal>
+         must be provided with a <literal>Configuration</literal> object or with a file name or
+         input stream to use to parse a <literal>Configuration</literal> from XML. The following sections describe
+         how to accomplish this.
+      </para>
+
+      <section>
+         <title>Parsing an XML-based Configuration File</title>
+         <para>
+            The most convenient way to configure JBoss Cache is via an XML file. The JBoss Cache distribution ships
+            with a number of configuration files for common use cases. It is recommended that these files be used as
+            a starting point, and tweaked to meet specific needs.
+         </para>
+
+         <para>
+            The simplest example of a configuration XML file, a cache configured to run in LOCAL mode, looks like this:
+         </para>
+         <programlisting role="XML"><![CDATA[
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<jbosscache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns="urn:jboss:jbosscache-core:config:3.1">
+</jbosscache>
+
+
+]]></programlisting>
+
+         <para>
+            This file uses sensible defaults for isolation levels, lock acquisition timeouts, locking modes, etc.  Another,
+            more complete, sample XML file is included in the
+            <link linkend="sample_xml_file">configuration reference</link>
+            section of this book,
+            along with
+            <link linkend="configuration_reference">a handy look-up table</link>
+            explaining the various options.
+         </para>
+         </section>
+         <section id="configuration.validation">
+            <title>Validating Configuration Files</title>
+            <para>
+               By default JBoss Cache will validate your XML configuration file against an XML schema and throw an
+               exception if the configuration is invalid.  This can be overridden with the <literal>-Djbosscache.config.validate=false</literal>
+               JVM parameter.  Alternately, you could specify your own schema to validate against, using the
+               <literal>-Djbosscache.config.schemaLocation=url</literal> parameter.
+            </para>
+            <para>
+               By default though, configuration files are validated against the JBoss Cache configuration schema, which is
+               included in the <literal>jbosscache-core.jar</literal> or on <literal>http://www.jboss.org/jbosscache/jbosscache-config-3.0.xsd</literal>.
+               Most XML editing tools can be used with this schema to ensure the configuration file you create is correct
+               and valid.
+            </para>
+         </section>
+
+      <section>
+         <title>Programmatic Configuration</title>
+         <para>
+            In addition to the XML-based configuration above, the
+            <literal>Configuration</literal>
+            can be built up programatically,
+            using the simple property mutators exposed by
+            <literal>Configuration</literal>
+            and its components. When constructed,
+            the
+            <literal>Configuration</literal>
+            object is preset with JBoss Cache
+            defaults and can even be used as-is for a quick start.
+         </para>
+
+         <programlisting role="JAVA"><![CDATA[
+   Configuration config = new Configuration();
+   config.setTransactionManagerLookupClass( GenericTransactionManagerLookup.class.getName() );
+   config.setIsolationLevel(IsolationLevel.READ_COMMITTED);
+   config.setCacheMode(CacheMode.LOCAL);
+   config.setLockAcquisitionTimeout(15000);
+
+   CacheFactory factory = new DefaultCacheFactory();
+   Cache cache = factory.createCache(config);
+]]></programlisting>
+
+         <para>
+            Even the above fairly simple configuration is pretty tedious programming;
+            hence the preferred use of XML-based configuration. However, if your
+            application requires it, there is no reason not to use XML-based
+            configuration for most of the attributes, and then access the
+            <literal>Configuration</literal>
+            object to programatically change
+            a few items from the defaults, add an eviction region, etc.
+         </para>
+
+         <para>
+            Note that configuration values may not be changed programmatically when a cache is running,
+            except those annotated as
+            <literal>@Dynamic</literal>
+            . Dynamic properties are also marked as such in the
+            <link linkend="configuration_reference">configuration reference</link>
+            table. Attempting to change a non-dynamic
+            property will result in a
+            <literal>ConfigurationException</literal>
+            .
+         </para>
+      </section>
+
+      <section>
+         <title>Using an IOC Framework</title>
+
+         <para>
+            The
+            <literal>Configuration</literal>
+            class and its
+            <link linkend="configuration.elements">component parts</link>
+            are all Java Beans that expose all config elements via simple setters
+            and getters. Therefore, any good IOC framework such as Spring, Google Guice, JBoss Microcontainer, etc. should be able to
+            build up a
+            <literal>Configuration</literal>
+            from an XML file in
+            the framework's own format. See the
+            <link linkend="deployment.microcontainer">deployment via the JBoss micrcontainer</link>
+            section for an example of this.
+         </para>
+      </section>
+   </section>
+
+   <section id="configuration.elements">
+      <title>Composition of a
+         <literal>Configuration</literal>
+         Object
+      </title>
+
+      <para>
+         A
+         <literal>Configuration</literal>
+         is composed of a number of
+         subobjects:
+
+         <mediaobject>
+            <imageobject>
+               <imagedata fileref="Configuration.png"/>
+            </imageobject>
+         </mediaobject>
+      </para>
+
+      <para>
+         Following is a brief overview of the components of a
+         <literal>Configuration</literal>
+         . See the javadoc and the linked
+         chapters in this book for a more complete explanation of the
+         configurations associated with each component.
+
+         <itemizedlist>
+            <listitem>
+               <literal>Configuration</literal>
+               : top level object
+               in the hierarchy; exposes the configuration properties listed in the
+               <link linkend="configuration_reference">configuration reference</link>
+               section of this book.
+            </listitem>
+
+            <listitem>
+               <literal>BuddyReplicationConfig</literal>
+               : only relevant if
+               <link linkend="br">buddy replication</link>
+               is used. General
+               buddy replication configuration options. Must include a:
+            </listitem>
+
+            <listitem>
+               <literal>BuddyLocatorConfig</literal>
+               : implementation-specific
+               configuration object for the
+               <literal>BuddyLocator</literal>
+               implementation
+               being used. What configuration elements are exposed depends on
+               the needs of the
+               <literal>BuddyLocator</literal>
+               implementation.
+            </listitem>
+
+            <listitem>
+               <literal>EvictionConfig</literal>
+               : only relevant if
+               <link linkend="eviction_policies">eviction</link>
+               is used. General
+               eviction configuration options. Must include at least one:
+            </listitem>
+
+            <listitem>
+               <literal>EvictionRegionConfig</literal>
+               : one for each
+               eviction region; names the region, etc. Must include a:
+            </listitem>
+
+            <listitem>
+               <literal>EvictionAlgorithmConfig</literal>
+               : implementation-specific
+               configuration object for the
+               <literal>EvictionAlgorithm</literal>
+               implementation
+               being used. What configuration elements are exposed depends on
+               the needs of the
+               <literal>EvictionAlgorithm</literal>
+               implementation.
+            </listitem>
+
+            <listitem>
+               <literal>CacheLoaderConfig</literal>
+               : only relevant if a
+               <link linkend="cache_loaders">cache loader</link>
+               is used. General
+               cache loader configuration options. Must include at least one:
+            </listitem>
+
+            <listitem>
+               <literal>IndividualCacheLoaderConfig</literal>
+               : implementation-specific
+               configuration object for the
+               <literal>CacheLoader</literal>
+               implementation
+               being used. What configuration elements are exposed depends on
+               the needs of the
+               <literal>CacheLoader</literal>
+               implementation.
+            </listitem>
+
+            <listitem>
+               <literal>RuntimeConfig</literal>
+               : exposes to cache clients
+               certain information about the cache's runtime environment (e.g. membership
+               in buddy replication groups if
+               <link linkend="br">buddy replication</link>
+               is used.) Also allows
+               direct injection into the cache of needed external services like a
+               JTA
+               <literal>TransactionManager</literal>
+               or a JGroups
+               <literal>ChannelFactory</literal>
+               .
+            </listitem>
+         </itemizedlist>
+      </para>
+   </section>
+
+   <section>
+      <title>Dynamic Reconfiguration</title>
+      <para>
+         Dynamically changing the configuration of
+         <emphasis>some</emphasis>
+         options while the cache is running is supported,
+         by programmatically obtaining the
+         <literal>Configuration</literal>
+         object from the running cache and changing values. E.g.,
+      </para>
+      <programlisting role="JAVA"><![CDATA[
+   Configuration liveConfig = cache.getConfiguration();
+   liveConfig.setLockAcquisitionTimeout(2000);
+         ]]></programlisting>
+      <para>
+         A complete listing of which options may be changed dynamically is in the
+         <link linkend="configuration_reference">configuration reference</link>
+         section. An
+         <literal>org.jboss.cache.config.ConfigurationException</literal>
+         will be thrown if you attempt to change a
+         setting that is not dynamic.
+      </para>
+
+      <section id="configuration.options">
+         <title>Overriding the Configuration via the Option API</title>
+         <para>
+            The Option API allows you to override certain behaviours of the cache on a per invocation basis.
+            This involves creating an instance of
+            <literal>org.jboss.cache.config.Option</literal>
+            , setting the options
+            you wish to override on the
+            <literal>Option</literal>
+            object and passing it in the
+            <literal>InvocationContext</literal>
+            before invoking your method on the cache.
+         </para>
+         <para>
+            E.g., to force a write lock when reading data (when used in a transaction, this provides semantics
+            similar to SELECT FOR UPDATE in a database)
+         </para>
+         <programlisting role="JAVA"><![CDATA[
+      // first start a transaction
+      cache.getInvocationContext().getOptionOverrides().setForceWriteLock(true);
+      Node n = cache.getNode(Fqn.fromString("/a/b/c"));
+      // make changes to the node
+      // commit transaction        
+   ]]></programlisting>
+
+         <para>
+            E.g., to suppress replication of a put call in a REPL_SYNC cache:
+         </para>
+         <programlisting role="JAVA"><![CDATA[
+      Node node = cache.getChild(Fqn.fromString("/a/b/c"));
+      cache.getInvocationContext().getOptionOverrides().setLocalOnly(true);
+      node.put("localCounter", new Integer(2));
+            ]]></programlisting>
+         <para>
+            See the javadocs on the
+            <literal>Option</literal>
+            class for details on the options available.
+         </para>
+      </section>
+   </section>
+</chapter>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<server>
+
+   <mbean code="org.jboss.cache.jmx.CacheJmxWrapper"
+          name="jboss.cache:service=Cache">
+
+      <depends>jboss:service=Naming</depends>
+      <depends>jboss:service=TransactionManager</depends>
+
+      <attribute name="TransactionManagerLookupClass">org.jboss.cache.transaction.GenericTransactionManagerLookup
+      </attribute>
+
+      <attribute name="IsolationLevel">REPEATABLE_READ</attribute>
+
+      <attribute name="CacheMode">LOCAL</attribute>
+
+      <attribute name="LockAcquisitionTimeout">15000</attribute>
+
+      <attribute name="EvictionPolicyConfig">
+         <config>
+            <attribute name="wakeUpIntervalSeconds">10</attribute>
+            <attribute name="eventQueueSize">200000</attribute>
+            <attribute name="policyClass">org.jboss.cache.eviction.LRUPolicy</attribute>
+
+            <!-- Cache wide default -->
+            <region name="/_default_">
+               <attribute name="maxNodes">5000</attribute>
+               <attribute name="minTimeToLiveSeconds">0</attribute>
+            </region>
+            <region name="/org/jboss/data">
+               <attribute name="minTimeToLiveSeconds">1000</attribute>
+               <attribute name="maxNodes">0</attribute>
+            </region>
+            <!-- already set to -1 -->
+            <region name="/org/jboss/data2">
+               <attribute name="minTimeToLiveSeconds">1000</attribute>
+               <attribute name="maxNodes">-1</attribute>
+            </region>
+            <!-- already set to -10 -->
+            <region name="/org/jboss/data3">
+               <attribute name="minTimeToLiveSeconds">1000</attribute>
+               <attribute name="maxNodes">-10</attribute>
+            </region>
+         </config>
+      </attribute>
+   </mbean>
+</server>

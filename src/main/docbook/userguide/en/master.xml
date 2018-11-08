@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3CR3//EN"
+      "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
+      <!ENTITY preface SYSTEM "modules/preface.xml">
+      <!ENTITY introduction SYSTEM "modules/introduction.xml">
+      <!ENTITY architecture SYSTEM "modules/architecture.xml">
+      <!ENTITY basic_api SYSTEM "modules/basic_api.xml">
+      <!ENTITY replication SYSTEM "modules/replication.xml">
+      <!ENTITY transactions SYSTEM "modules/transactions.xml">
+      <!ENTITY eviction_policies SYSTEM "modules/eviction_policies.xml">
+      <!ENTITY cache_loaders SYSTEM "modules/cache_loaders.xml">
+      <!ENTITY compatibility SYSTEM "modules/compatibility.xml">
+      <!ENTITY configuration SYSTEM "modules/configuration.xml">
+      <!ENTITY deployment SYSTEM "modules/deployment.xml">
+      <!ENTITY configuration_reference SYSTEM "modules/configuration_reference.xml">
+      <!ENTITY jmx_reference SYSTEM "modules/jmx_reference.xml">
+      <!ENTITY batching SYSTEM "modules/batching.xml">
+      ]>
+<book lang="en">
+   <bookinfo>
+      <title>JBoss Cache Users' Guide</title>
+      <subtitle>A clustered, transactional cache</subtitle>
+
+      <!-- Release version and date -->
+      <releaseinfo>Release 3.1.0 Cascabel</releaseinfo>
+      <pubdate>April 2009</pubdate>
+
+      <!-- Authors/contributors -->
+      <author>
+         <firstname>Manik</firstname>
+         <surname>Surtani</surname>
+         <email>manik AT jboss DOT org</email>
+      </author>
+
+      <author>
+         <firstname>Brian</firstname>
+         <surname>Stansberry</surname>
+         <email>brian DOT stansberry AT jboss DOT com</email>
+      </author>
+
+      <author>
+         <firstname>Galder</firstname>
+         <surname>Zamarreño</surname>
+         <email>galder DOT zamarreno AT jboss DOT com</email>
+      </author>
+
+      <author>
+         <firstname>Mircea</firstname>
+         <surname>Markus</surname>
+         <email>mircea DOT markus AT jboss DOT com</email>
+      </author>
+
+      <!-- copyright info -->
+      <copyright>
+         <year>2004</year>
+         <year>2005</year>
+         <year>2006</year>
+         <year>2007</year>
+         <year>2008</year>
+         <year>2009</year>
+         <holder>JBoss, a division of Red Hat Inc., and all authors as named.</holder>
+      </copyright>
+
+   </bookinfo>
+
+   <!-- Adds a table of contents here -->
+   <toc/>
+
+   &preface;
+
+   <part label="I">
+      <title>Introduction to JBoss Cache</title>
+      <partintro>
+         <para>
+            This section covers what developers would need to quickly start using JBoss Cache in their projects. It
+            covers an overview of the concepts and API, configuration and deployment information.
+         </para>
+      </partintro>
+      &introduction;
+      &basic_api;
+      &configuration;
+      &batching;
+      &deployment;
+      &compatibility;
+   </part>
+
+   <part label="II">
+      <title>JBoss Cache Architecture</title>
+      <partintro>
+         <para>
+            This section digs deeper into the JBoss Cache architecture, and is meant for developers wishing to use the more
+            advanced cache features,extend or enhance the cache, write plugins, or are just looking for detailed knowledge
+            of how things work under the hood.
+         </para>
+      </partintro>
+      &architecture;
+      &replication;
+      &cache_loaders;
+      &eviction_policies;
+      &transactions;
+   </part>
+
+   <part label="III">
+      <title>JBoss Cache Configuration References</title>
+      <partintro>
+         <para>
+            This section contains technical references for easy looking up.
+         </para>
+      </partintro>
+
+      &configuration_reference;
+      &jmx_reference;
+   </part>
+</book>

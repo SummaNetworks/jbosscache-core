@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="JBoss Cache Demo" default="help" basedir=".">
+
+   <property name="className" value="org.jboss.cache.demo.JBossCacheView"/>
+   <property name="cfgFile" value="../etc/config-samples/total-replication.xml"/>
+   <property name="jvm.ipv4" value="-Djava.net.preferIPv4Stack=true"/>
+   <property name="jvm.localhost" value="-Dbind.address=127.0.0.1"/>
+   <property name="jvm.memory" value="-Xmx128M"/>
+
+
+   <path id="classpath">
+      <fileset dir="lib">
+         <include name="**/*.jar"/>
+      </fileset>
+      <fileset dir="../lib">
+         <include name="**/*.jar"/>
+      </fileset>
+      <fileset dir="..">
+         <include name="jbosscache-core.jar"/>
+      </fileset>
+   </path>
+
+   <target name="help">
+      <echo><![CDATA[
+   _________                 _____            _
+  |_  | ___ \               /  __ \          | |
+    | | |_/ / ___  ___ ___  | /  \/ __ _  ___| |__   ___
+    | | ___ \/ _ \/ __/ __| | |    / _` |/ __| '_ \ / _ \
+/\__/ / |_/ / (_) \__ \__ \ | \__/\ (_| | (__| | | |  __/
+\____/\____/ \___/|___/___/  \____/\__,_|\___|_| |_|\___|
+
+
+ _____     _             _       _
+|_   _|   | |           (_)     | |
+  | |_   _| |_ ___  _ __ _  __ _| |
+  | | | | | __/ _ \| '__| |/ _` | |
+  | | |_| | || (_) | |  | | (_| | |
+  \_/\__,_|\__\___/|_|  |_|\__,_|_|
+
+
+
+----------------------------------------------------------
+
+To run the tutorial, type "ant run"
+
+      ]]></echo>
+   </target>
+
+   <target name="run">
+      <echo><![CDATA[
+   _________                 _____            _
+  |_  | ___ \               /  __ \          | |
+    | | |_/ / ___  ___ ___  | /  \/ __ _  ___| |__   ___
+    | | ___ \/ _ \/ __/ __| | |    / _` |/ __| '_ \ / _ \
+/\__/ / |_/ / (_) \__ \__ \ | \__/\ (_| | (__| | | |  __/
+\____/\____/ \___/|___/___/  \____/\__,_|\___|_| |_|\___|
+
+
+ _____     _             _       _
+|_   _|   | |           (_)     | |
+  | |_   _| |_ ___  _ __ _  __ _| |
+  | | | | | __/ _ \| '__| |/ _` | |
+  | | |_| | || (_) | |  | | (_| | |
+  \_/\__,_|\__\___/|_|  |_|\__,_|_|
+
+
+
+----------------------------------------------------------
+
+Starting GUI ...
+
+      ]]></echo>
+
+      <java classname="${className}" classpathref="classpath" fork="true">
+         <jvmarg value="${jvm.ipv4}"/>
+         <jvmarg value="${jvm.localhost}"/>
+         <jvmarg value="${jvm.memory}"/>
+         <arg value="-console"/>
+         <arg value="-config"/>
+         <arg value="${cfgFile}"/>
+      </java>
+   </target>
+</project>

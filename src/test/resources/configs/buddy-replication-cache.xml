@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<jbosscache  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns="urn:jboss:jbosscache-core:config:3.1">
+   <locking isolationLevel="REPEATABLE_READ" lockAcquisitionTimeout="10000"/>
+   <transaction transactionManagerLookupClass="org.jboss.cache.transaction.GenericTransactionManagerLookup"/>
+   <clustering clusterName="JBossCache-Cluster">
+      <sync replTimeout="15000"/>
+
+      <buddy enabled="true" poolName="myBuddyPoolReplicationGroup" communicationTimeout="2000">
+         <dataGravitation auto="false" removeOnFind="true" searchBackupTrees="true"/>
+         <locator class="org.jboss.cache.buddyreplication.NextMemberBuddyLocator">
+            <properties>
+               numBuddies = 1
+               ignoreColocatedBuddies = true
+            </properties>
+         </locator>
+      </buddy>
+      <stateRetrieval timeout="20000"/>
+      <jgroupsConfig>
+         <TCP start_port="7800" recv_buf_size="20000000" use_send_queues="false" loopback="false" discard_incompatible_packets="true"
+              max_bundle_size="64000" max_bundle_timeout="30" use_incoming_packet_handler="true" enable_bundling="true"
+              enable_unicast_bundling="true" enable_diagnostics="true" use_concurrent_stack="true"
+              thread_naming_pattern="pl" thread_pool.enabled="true" thread_pool.min_threads="1"
+              thread_pool.max_threads="4" thread_pool.keep_alive_time="30000" thread_pool.queue_enabled="true"
+              thread_pool.queue_max_size="50000" thread_pool.rejection_policy="discard" oob_thread_pool.enabled="true"
+              oob_thread_pool.min_threads="2" oob_thread_pool.max_threads="4" oob_thread_pool.keep_alive_time="10000"
+              oob_thread_pool.queue_enabled="false" oob_thread_pool.queue_max_size="10"
+              oob_thread_pool.rejection_policy="Run"/>
+         <MPING mcast_addr="232.1.2.3" timeout="2000" num_initial_members="3"/>
+         <MERGE2 max_interval="30000" min_interval="10000"/>
+         <FD_SOCK/>
+         <FD timeout="10000" max_tries="5" shun="true"/>
+         <VERIFY_SUSPECT timeout="1500"/>
+         <pbcast.NAKACK use_mcast_xmit="false" gc_lag="0" retransmit_timeout="300,600,1200,2400,4800"
+                        discard_delivered_msgs="true"/>
+         <pbcast.STABLE stability_delay="1000" desired_avg_gossip="50000" max_bytes="400000"/>
+         <pbcast.GMS print_local_addr="true" join_timeout="5000" join_retry_timeout="2000" shun="false"
+                     view_bundling="true" view_ack_collection_timeout="5000"/>
+         <FC max_credits="5000000" min_threshold="0.20"/>
+         <FRAG2 frag_size="60000"/>
+         <pbcast.STREAMING_STATE_TRANSFER use_reading_thread="true"/>
+         <pbcast.FLUSH timeout="0"/>
+      </jgroupsConfig>
+   </clustering>
+</jbosscache>

@@ -1,0 +1,234 @@
+<chapter id="transactions">
+   <title>Transactions and Concurrency</title>
+   <section id="transactions.concurrent">
+      <title>Concurrent Access</title>
+
+      <para>JBoss Cache is a thread safe caching API, and uses its own efficient mechanisms of controlling concurrent
+         access. It uses an innovative implementation of multi-versioned concurrency control
+         (<ulink url="http://en.wikipedia.org/wiki/Multiversion_concurrency_control">MVCC</ulink>) as the default
+         locking scheme.  Versions of JBoss Cache prior to 3.x offered Optimistic and Pessimistic Locking schemes,
+         both of which are now deprecated in favor of MVCC.
+      </para>
+
+      <section id="transactions.locks.mvcc">
+         <title>Multi-Version Concurrency Control (MVCC)</title>
+         <para>
+            <ulink url="http://en.wikipedia.org/wiki/Multiversion_concurrency_control">MVCC</ulink> is a locking scheme
+            commonly used by modern database implementations to control fast, safe concurrent access to shared data.
+         </para>
+         <section id="mvcc.concepts">
+            <title>MVCC Concepts</title>
+            <para>
+               MVCC is designed to provide the following features for concurrent access:
+               <itemizedlist>
+                  <listitem>Readers that don't block writers</listitem>
+                  <listitem>Writers that fail fast</listitem>
+               </itemizedlist>
+               and achieves this by using data versioning and copying for concurrent writers.  The theory is that readers
+               continue reading shared state, while writers copy the shared state, increment a version id, and write that
+               shared state back after verifying that the version is still valid (i.e., another concurrent writer has not
+               changed this state first).
+            </para>
+            <para>
+               This allows readers to continue reading while not preventing writers from writing, and repeatable read
+               semantics are maintained by allowing readers to read off the old version of the state.
+            </para>
+         </section>
+         <section id="mvcc.impl">
+            <title>MVCC Implementation</title>
+            <para>
+               JBoss Cache's implementation of MVCC is based on a few features:
+               <itemizedlist>
+                  <listitem>Readers don't acquire any locks</listitem>
+                  <listitem>Only one additional version is maintained for shared state, for a single writer</listitem>
+                  <listitem>All writes happen sequentially, to provide fail-fast semantics</listitem>
+               </itemizedlist>
+               The extremely high performance of JBoss Cache's MVCC implementation for reading threads is achieved by
+               not requiring any synchronization or locking for readers.  For each reader thread, the
+               <literal>MVCCLockingInterceptor</literal> wraps state in a lightweight container object, which is placed
+               in the thread's <literal>InvocationContext</literal> (or <literal>TransactionContext</literal> if running
+               in a transaction).  All subsequent operations on the state happens via the container object.  This use of
+               Java references allows for repeatable read semantics even if the actual state changes simultaneously.
+            </para>
+            <para>
+               Writer threads, on the other hand, need to acquire a lock before any writing can commence.  Currently,
+               we use lock striping to improve the memory performance of the cache, and the size of the shared lock pool
+               can be tuned using the <literal>concurrencyLevel</literal> attribute of the <literal>locking</literal>
+               element.  See the <link linkend="configuration_reference_chapter">configuration reference</link>
+               for details.  After acquiring an exclusive lock on an Fqn, the writer thread then wraps the state to be
+               modified in a container as well, just like with reader threads, and then copies this state for writing.
+               When copying, a reference to the original version is still maintained in the container (for rollbacks).
+               Changes are then made to the copy and the copy is finally written to the data structure when the write
+               completes.
+            </para>
+            <para>
+               This way, subsequent readers see the new version while existing readers still hold a reference to the
+               original version in their context.
+            </para>
+            <para>
+               If a writer is unable to acquire the write lock after some time, a <literal>TimeoutException</literal> is
+               thrown.  This lock acquisition timeout defaults to 10000 millis and can be configured using the
+               <literal>lockAcquisitionTimeout</literal> attribute of the <literal>locking</literal> element.  See the 
+               <link linkend="configuration_reference_chapter">configuration reference</link> for details.
+            </para>
+            <section id="mvcc.iso">
+               <title>Isolation Levels</title>
+               <para>
+                  JBoss Cache 3.x supports two isolation levels: REPEATABLE_READ and READ_COMMITTED, which correspond
+                  in semantic to <ulink url="http://en.wikipedia.org/wiki/Isolation_level">database-style isolation levels</ulink>.
+                  Previous versions of JBoss Cache supported all 5 database isolation levels, and if an unsupported
+                  isolation level is configured, it is either upgraded or downgraded to the closest supported level.
+               </para>
+               <para>
+                  REPEATABLE_READ is the default isolation level, to maintain compatibility with previous versions of
+                  JBoss Cache.  READ_COMMITTED, while providing a slightly weaker isolation, has a significant
+                  performance benefit over REPEATABLE_READ.
+               </para>
+            </section>
+            <section id="mvcc.writeskew">
+               <title>Concurrent Writers and Write-Skews</title>
+               <para>
+                  Although MVCC forces writers to obtain a write lock, a phenomenon known as write skews may occur when
+                  using REPEATABLE_READ:
+               </para>
+               <mediaobject>
+                  <imageobject>
+                     <imagedata fileref="writeskew.png" format="PNG"/>
+                  </imageobject>
+               </mediaobject>
+               <para>
+                  This happens when concurrent transactions performing a read and then a write, based on the value that
+                  was read.  Since reads involve holding on to the reference to the state in the
+                  transaction context, a subsequent write would work off that original state read, which may now be stale.
+               </para>
+               <para>
+                  The default behavior with dealing with a write skew is to throw a <literal>DataVersioningException</literal>,
+                  when it is detected when copying state for writing. However, in most applications, a write skew may not
+                  be an issue (for example, if the state written has no relationship to the state originally read) and
+                  should be allowed.  If your application does not care about write skews, you can allow them to happen
+                  by setting the <literal>writeSkewCheck</literal> configuration attribute to <literal>false</literal>.
+                  See the <link linkend="configuration_reference_chapter">configuration reference</link> for details.
+               </para>
+               <para>
+                  Note that write skews cannot happen when using READ_COMMITTED since threads always work off committed
+                  state.
+               </para>
+            </section>
+         </section>
+         <section id="mvcc.cfg">
+            <title>Configuring Locking</title>
+            <para>
+               Configuring MVCC involves using the <literal><![CDATA[<locking /> ]]></literal> configuration tag, as follows:
+            </para>
+               <programlisting role="XML"><![CDATA[
+   <locking
+      isolationLevel="REPEATABLE_READ"
+      lockAcquisitionTimeout="10234"
+      nodeLockingScheme="mvcc"
+      writeSkewCheck="false"
+      concurrencyLevel="1000" />                  
+               ]]></programlisting>
+
+            <para>
+               <itemizedlist>
+                  <listitem><literal>nodeLockingScheme</literal> - the node locking scheme used.  Defaults to MVCC if
+                     not provided, deprecated schemes such as <literal>pessimistic</literal> or <literal>optimistic</literal>
+                     may be used but is not encouraged.</listitem>
+                  <listitem><literal>isolationLevel</literal> - transaction isolation level.  Defaults to REPEATABLE_READ if not provided.</listitem>
+                  <listitem><literal>writeSkewCheck</literal> - defaults to <literal>true</literal> if not provided.</listitem>
+                  <listitem><literal>concurrencyLevel</literal> - defaults to 500 if not provided.</listitem>
+                  <listitem><literal>lockAcquisitionTimeout</literal> - only applies to writers when using MVCC.  Defaults to 10000 if not provided.</listitem>
+               </itemizedlist>
+            </para>
+         </section>
+      </section>
+
+      <section id="transactions.locks.dep">
+         <title>Pessimistic and Optimistic Locking Schemes</title>
+         <para>
+            From JBoss Cache 3.x onwards, pessimistic and optimistic locking schemes are deprecated in favor of
+            <link linkend="transactions.locks.mvcc">MVCC</link>.  It is recommended that existing applications
+            move off these legacy locking schemes as support for them will eventually be dropped altogether in future
+            releases.
+         </para>
+         <para>
+            Documentation for legacy locking schemes are not included in this user guide, and if necessary, can be
+            referenced in previous versions of this document, which can be found on
+            <ulink url="http://www.jboss.org/jbosscache">the JBoss Cache website</ulink>.
+         </para>
+      </section>
+   </section>
+
+
+   <section id="transactions.jta">
+      <title>JTA Support</title>
+
+      <para>JBoss Cache can be configured to use and participate in
+         <ulink url="http://java.sun.com/javaee/technologies/jta/">JTA</ulink> compliant transactions. Alternatively, if
+         transaction support is disabled, it is equivalent to using autocommit in JDBC calls, where
+         modifications are potentially replicated after every change (if replication is enabled).
+      </para>
+
+      <para>What JBoss Cache does on every incoming call is:</para>
+      <orderedlist>
+         <listitem>
+            <para>Retrieve the current
+               <literal>javax.transaction.Transaction</literal> associated with the thread
+            </para>
+         </listitem>
+         <listitem>
+            <para>If not already done, register a
+               <literal>javax.transaction.Synchronization</literal>
+               with the transaction manager to be notified when a transaction commits
+               or is rolled back.
+            </para>
+         </listitem>
+      </orderedlist>
+      <para>
+         In order to do this, the cache has to be provided with a reference to environment's
+         <literal>javax.transaction.TransactionManager</literal>. This is usually done by configuring the cache
+         with the class name of an implementation of the <literal>TransactionManagerLookup</literal>
+         interface. When the cache starts, it will create an instance of this class and invoke its
+         <literal>getTransactionManager()</literal> method, which returns a reference to the
+         <literal>TransactionManager</literal>.
+      </para>
+
+      <mediaobject>
+         <imageobject>
+            <imagedata fileref="TransactionLookup.png" format="PNG"/>
+         </imageobject>
+      </mediaobject>
+
+      <para>JBoss Cache ships with
+         <literal>JBossTransactionManagerLookup</literal> and <literal>GenericTransactionManagerLookup</literal>. The
+         <literal>JBossTransactionManagerLookup</literal> is able to bind to a running JBoss AS instance and retrieve a
+         <literal>TransactionManager</literal> while the <literal>GenericTransactionManagerLookup</literal>
+         is able to bind to most popular Java EE application servers and provide the same functionality. A dummy
+         implementation - <literal>DummyTransactionManagerLookup</literal> - is also provided for unit tests. Being a
+         dummy, this is not recommended for production use a it has some severe limitations to do with concurrent
+         transactions and recovery.
+      </para>
+
+      <para>
+         An alternative to configuring a <literal>TransactionManagerLookup</literal> is to programatically inject a
+         reference to the <literal>TransactionManager</literal> into the <literal>Configuration</literal> object's
+         <literal>RuntimeConfig</literal> element:
+      </para>
+
+      <programlisting role="JAVA"><![CDATA[
+   TransactionManager tm = getTransactionManager(); // magic method
+   cache.getConfiguration().getRuntimeConfig().setTransactionManager(tm);
+      ]]></programlisting>
+
+      <para>
+         Injecting the <literal>TransactionManager</literal> is the recommended approach when the
+         <literal>Configuration</literal> is built by some sort of IOC container that already has a reference to the
+         <literal>TransactionManager</literal>.
+      </para>
+
+      <para>When the transaction commits, we initiate either a one- two-phase commit
+         protocol. See <link linkend="replication.tx">replicated caches and transactions</link> for details.
+      </para>
+
+   </section>
+</chapter>

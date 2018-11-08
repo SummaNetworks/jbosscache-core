@@ -1,0 +1,60 @@
+<chapter id="batching">
+   <title>Batching API</title>
+   <section id="batching.intro">
+      <title>Introduction</title>
+      <para>
+         The batching API, introduced in JBoss Cache 3.x, is intended as a mechanism to batch the way calls are replicated
+         independent of JTA transactions.
+      </para>
+      <para>
+         This is useful when you want to batch up replication calls within a scope finer than that of any ongoing JTA transactions.
+      </para>
+      </section>
+   <section id="batching.configuring">
+      <title>Configuring batching</title>
+      <para>
+         To use batching, you need to enable invocation batching in your cache configuration, either on the <literal>Configuration</literal> object:
+      </para>
+      <programlisting role="JAVA"><![CDATA[
+   Configuration.setInvocationBatchingEnabled(true);
+      ]]></programlisting>
+      <para>
+         or in your XML file:
+      </para>
+      <programlisting role="XML"><![CDATA[
+   <invocationBatching enabled="true"/>
+      ]]></programlisting>
+      <para>
+         By default, invocation batching is disabled.  Note that you do <emphasis>not</emphasis> have to have a transaction
+         manager defined to use batching.
+      </para>
+      </section>
+
+   <section id="batching.api">
+      <title>Batching API</title>
+      <para>
+         Once you have configured your cache to use batching, you use it by calling <literal>startBatch()</literal>
+         and <literal>endBatch()</literal> on <literal>Cache</literal>.  E.g.,
+      </para>
+      <programlisting role="JAVA"><![CDATA[
+   Cache cache = getCache();
+
+   // not using a batch
+   cache.put("/a", "key", "value"); // will replicate immediately
+
+   // using a batch
+   cache.startBatch();
+   cache.put("/a", "key", "value");
+   cache.put("/b", "key", "value");
+   cache.put("/c", "key", "value");
+   cache.endBatch(true); // This will now replicate the modifications since the batch was started.
+
+   cache.startBatch();
+   cache.put("/a", "key", "value");
+   cache.put("/b", "key", "value");
+   cache.put("/c", "key", "value");
+   cache.endBatch(false); // This will "discard" changes made in the batch
+
+      ]]></programlisting>
+      </section>
+</chapter>

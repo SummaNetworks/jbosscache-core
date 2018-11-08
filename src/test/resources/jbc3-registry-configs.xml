@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<registry:cache-configs xmlns="urn:jboss:jbosscache-core:config:3.1" xmlns:registry="urn:jboss:jbosscache-core:cache-repo:3.1">
+
+    <!--
+     Various JBoss Cache configurations, suitable for different caching
+     uses (e.g. entities vs. queries).
+
+     In all cases, TransactionManager configuration not required.
+     Hibernate will plug in its own transaction manager integration.
+    -->
+
+
+    <!-- A config appropriate for entity/collection caching. -->
+    <registry:cache-config name="optimistic-entity">
+       <locking lockAcquisitionTimeout="15000" nodeLockingScheme="optimistic"/>
+       <transaction syncCommitPhase="true" syncRollbackPhase="true"
+                    transactionManagerLookupClass="org.jboss.cache.transaction.GenericTransactionManagerLookup"/>
+       <serialization useRegionBasedMarshalling="true"/>
+       <startup regionsInactiveOnStartup="true"/>
+       <clustering mode="i" clusterName="optimistic-entity">
+          <stateRetrieval fetchInMemoryState="false" timeout="20000"/>
+          <jgroupsConfig multiplexerStack="udp-sync"/>
+          <sync replTimeout="20000"/>
+       </clustering>
+
+       <eviction wakeUpInterval="5000">
+          <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm">
+             <property name="maxNodes" value="5000" />
+             <property name="timeToLive" value="1000" />
+          </default>
+          <region name="/TS">
+             <property name="maxNodes" value="0" />
+             <property name="timeToLive" value="0" />
+          </region>
+       </eviction>
+    </registry:cache-config>
+
+    <!-- A config appropriate for entity/collection caching that
+         uses pessimistic locking -->
+    <registry:cache-config name="pessimistic-entity">
+       <locking isolationLevel="REPEATABLE_READ" lockAcquisitionTimeout="15000" nodeLockingScheme="pessimistic"/>
+       <serialization useRegionBasedMarshalling="true"/>
+       <startup regionsInactiveOnStartup="true"/>
+       <clustering clusterName="pessimistic-entity" mode="i">
+         <stateRetrieval fetchInMemoryState="false" timeout="20000"/>
+         <jgroupsConfig multiplexerStack="udp-sync"/>
+          <sync replTimeout="20000"/>
+       </clustering>
+
+       <eviction wakeUpInterval="5000">
+          <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm">
+             <property name="maxNodes" value="5000" />
+             <property name="timeToLive" value="1000" />
+          </default>
+          <region name="/TS">
+             <property name="maxNodes" value="0" />
+             <property name="timeToLive" value="0" />
+          </region>
+       </eviction>
+    </registry:cache-config>
+
+    <!-- A config appropriate for query caching. Does not replicate
+         queries. DO NOT STORE TIMESTAMPS IN THIS CACHE.
+    -->
+    <registry:cache-config name="local-query">
+       <locking lockAcquisitionTimeout="15000" nodeLockingScheme="optimistic"/>
+       <transaction transactionManagerLookupClass="org.jboss.cache.transaction.GenericTransactionManagerLookup"/>
+       <eviction wakeUpInterval="5000">
+          <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm">
+             <property name="maxNodes" value="5000" />
+             <property name="timeToLive" value="1000" />
+          </default>
+          <region name="/TS">
+             <property name="maxNodes" value="0" />
+             <property name="timeToLive" value="0" />
+          </region>
+       </eviction>
+    </registry:cache-config>
+
+    <!-- A query cache that replicates queries. Replication is asynchronous.
+          DO NOT STORE TIMESTAMPS IN THIS CACHE.
+    -->
+    <registry:cache-config name="replicated-query">
+       <locking isolationLevel="REPEATABLE_READ" lockAcquisitionTimeout="15000" nodeLockingScheme="optimistic"/>
+       <transaction transactionManagerLookupClass="org.jboss.cache.transaction.GenericTransactionManagerLookup"/>
+       <serialization useRegionBasedMarshalling="false"/>
+       <startup regionsInactiveOnStartup="false"/>
+       <clustering clusterName="replicated-query" mode="r">
+         <stateRetrieval fetchInMemoryState="false" timeout="20000"/>
+         <jgroupsConfig multiplexerStack="udp"/>
+          <async />
+       </clustering>
+       <eviction wakeUpInterval="5000">
+          <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm">
+             <property name="maxNodes" value="5000" />
+             <property name="timeToLive" value="1000" />
+          </default>
+          <region name="/TS" >
+             <property name="maxNodes" value="0" />
+             <property name="timeToLive" value="0" />
+          </region>
+       </eviction>
+    </registry:cache-config>
+
+    <!-- Optimized for timestamp caching. A clustered timestamp cache
+         is required if query caching is used, even if the query cache
+         itself is configured with CacheMode=LOCAL.
+    -->
+    <registry:cache-config name="timestamps-cache">
+       <locking isolationLevel="REPEATABLE_READ" lockAcquisitionTimeout="15000" nodeLockingScheme="pessimistic"/>
+       <serialization useRegionBasedMarshalling="true"/>
+       <startup regionsInactiveOnStartup="true"/>
+       <clustering clusterName="timestamps-cache" mode="r">
+         <stateRetrieval fetchInMemoryState="true" timeout="20000"/>
+         <jgroupsConfig multiplexerStack="udp"/>
+          <async />
+       </clustering>
+       <eviction wakeUpInterval="5000">
+          <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm">
+             <property name="maxNodes" value="5000" />
+             <property name="timeToLive" value="1000" />
+          </default>
+          <region name="/TS">
+             <property name="maxNodes" value="0" />
+             <property name="timeToLive" value="0" />
+          </region>
+       </eviction>
+    </registry:cache-config>
+
+    <!-- A config appropriate for a cache that's shared for
+         entity, collection, query and timestamp caching. Not an advised
+         configuration, since it requires cache mode REPL_SYNC, which is the
+         least efficient mode. Also requires a full state transfer at startup,
+         which can be expensive. Uses optimistic locking. -->
+    <registry:cache-config name="optimistic-shared">
+       <locking lockAcquisitionTimeout="15000" nodeLockingScheme="optimistic"/>
+       <transaction syncCommitPhase="true" syncRollbackPhase="true"
+                    transactionManagerLookupClass="org.jboss.cache.transaction.GenericTransactionManagerLookup"/>
+       <serialization useRegionBasedMarshalling="true"/>
+       <startup regionsInactiveOnStartup="true"/>
+       <clustering clusterName="optimistic-shared" mode="r">
+         <stateRetrieval fetchInMemoryState="true" timeout="20000"/>
+         <jgroupsConfig multiplexerStack="udp"/>
+          <sync replTimeout="20000"/>
+       </clustering>
+       <eviction wakeUpInterval="5000">
+          <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm">
+             <property name="maxNodes" value="5000" />
+             <property name="timeToLive" value="1000" />
+          </default>
+          <region name="/TS">
+             <property name="maxNodes" value="0" />
+             <property name="timeToLive" value="0" />
+          </region>
+       </eviction>
+    </registry:cache-config>
+
+
+
+    <!-- A config appropriate for a cache that's shared for
+         entity, collection, query and timestamp caching. Not an advised
+         configuration, since it requires cache mode REPL_SYNC, which is the
+         least efficient mode. Also requires a full state transfer at startup,
+         which can be expensive. Uses pessmistic locking.
+    -->
+    <registry:cache-config name="pessimistic-shared">
+
+       <locking isolationLevel="REPEATABLE_READ" lockAcquisitionTimeout="15000" nodeLockingScheme="pessimistic"/>
+       <serialization useRegionBasedMarshalling="true"/>
+       <startup regionsInactiveOnStartup="true"/>
+       <clustering clusterName="pessimistic-shared" mode="r">
+         <stateRetrieval fetchInMemoryState="true" timeout="20000"/>
+         <jgroupsConfig multiplexerStack="udp"/>
+          <sync replTimeout="20000"/>
+       </clustering>
+       <eviction wakeUpInterval="5000">
+          <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm">
+             <property name="maxNodes" value="5000" />
+             <property name="timeToLive" value="1000" />
+          </default>
+          <region name="/TS">
+             <property name="maxNodes" value="0" />
+             <property name="timeToLive" value="0" />
+          </region>
+       </eviction>
+    </registry:cache-config>
+</registry:cache-configs>

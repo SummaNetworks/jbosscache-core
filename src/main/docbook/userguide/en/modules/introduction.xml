@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter id="introduction">
+   <title>Overview</title>
+
+   <section>
+      <title>What is JBoss Cache?</title>
+
+      <para>
+         JBoss Cache is a tree-structured, clustered, transactional cache.  It can be used in a standalone, non-clustered
+         environment, to cache frequently accessed data in memory thereby removing data retrieval or calculation bottlenecks
+         while providing "enterprise" features such as <ulink url="http://java.sun.com/products/jta">JTA</ulink> compatibility, eviction and persistence.
+         </para>
+      <para>
+         JBoss Cache is also a clustered cache, and can be used in a cluster to replicate state providing a high degree
+         of failover.  A variety of replication modes are supported, including invalidation and buddy replication, and
+         network communications can either be synchronous or asynchronous.
+         </para>
+      <para>
+         When used in a clustered mode, the cache is an effective mechanism of building high availability, fault
+         tolerance and even load balancing into custom applications and frameworks.  For example, the
+         <ulink url="http://www.jboss.org/projects/jbossas/">JBoss Application Server</ulink> and Red Hat's
+         <ulink url="http://www.jboss.com">Enterprise Application Platform</ulink> make extensive use of JBoss Cache to
+         cluster services such as HTTP and <ulink url="http://java.sun.com/products/ejb/">EJB</ulink> sessions, as well as
+         providing a distributed entity cache for <ulink url="http://en.wikipedia.org/wiki/Java_Persistence_API">JPA</ulink>.
+      </para>
+      <para>
+         JBoss Cache can - and often is - used outside of JBoss AS, in other Java EE environments such as Spring, Tomcat,
+         Glassfish, BEA WebLogic, IBM WebSphere, and even in standalone Java programs thanks to its minimal dependency set.
+      </para>
+      <section>
+         <title>And what is POJO Cache?</title>
+         <para>
+            POJO Cache is an extension of the core JBoss Cache API. POJO Cache offers additional functionality such as:
+            <itemizedlist>
+               <listitem>maintaining object references even after replication or persistence.</listitem>
+               <listitem>fine grained replication, where only modified object fields are replicated.</listitem>
+               <listitem>"API-less" clustering model where POJOs are simply annotated as being clustered.</listitem>
+            </itemizedlist>
+         </para>
+         <para>
+            POJO Cache has a complete and separate set of documentation, including a Users' Guide, FAQ and tutorial all
+            available on the JBoss Cache <ulink url="http://www.jboss.org/jbosscache">documentation website</ulink>.
+            As such, POJO Cache will not be discussed further in this book.
+         </para>
+      </section>
+
+   </section>
+
+   <section>
+      <title>Summary of Features</title>
+
+      <section>
+         <title>Caching objects</title>
+
+         <para>
+            JBoss Cache offers a simple and straightforward API, where data  - simple Java objects - can be placed in the
+            cache.  Based on configuration options selected, this data may be one or all of:
+            <itemizedlist>
+               <listitem>cached in-memory for efficient, thread-safe retrieval.</listitem>
+               <listitem>replicated to some or all cache instances in a cluster.</listitem>
+               <listitem>persisted to disk and/or a remote, in-memory cache cluster ("far-cache").</listitem>
+               <listitem>garbage collected from memory when memory runs low, and passivated to disk so state isn't lost.
+               </listitem>
+            </itemizedlist>
+            In addition, JBoss Cache offers a rich set of enterprise-class features:
+            <itemizedlist>
+               <listitem>being able to participate in <ulink url="http://java.sun.com/products/jta">JTA</ulink> transactions
+                  (works with most Java EE compliant transaction managers).</listitem>
+               <listitem>attach to JMX consoles and provide runtime statistics on the state of the cache.</listitem>
+               <listitem>allow client code to attach listeners and receive notifications on cache events.</listitem>
+               <listitem>allow grouping of cache operations into batches, for efficient replication</listitem>
+            </itemizedlist>
+         </para>
+      </section>
+
+      <section>
+         <title>Local and clustered modes</title>
+
+         <para>
+            The cache is organized as a tree, with a single root. Each node in the tree essentially contains a map,
+            which acts as a store for key/value pairs. The only requirement placed on objects that are cached is that
+            they implement <literal>java.io.Serializable</literal>.
+         </para>
+
+         <para>
+            JBoss Cache can be either local or replicated. Local caches exist only within the scope of the JVM in which
+            they are created, whereas replicated caches propagate any changes to some or all other caches in the same
+            cluster. A cluster may span different hosts on a network or just different JVMs on a single host.
+         </para>
+
+      </section>
+
+      <section>
+         <title>Clustered caches and transactions</title>
+
+         <para>
+            When a change is made to an object in the cache and that change is done in
+            the context of a transaction, the replication of changes is deferred until the transaction
+            completes successfully. All modifications are kept in a list associated with
+            the transaction of the caller. When the transaction commits, changes are replicated. Otherwise, on a rollback,
+            we simply undo the changes locally and discard the modification list, resulting in zero network traffic and
+            overhead. For example, if a caller makes 100 modifications and then rolls back the transaction, nothing is
+            replicated, resulting in no network traffic.
+         </para>
+
+         <para>
+            If a caller has no transaction or batch associated with it, modifications are replicated immediately.  E.g.
+            in the example used earlier, 100 messages would be broadcast for each modification. In this sense, running without
+            a batch or transaction can be thought of as analogous as running with auto-commit switched on in JDBC terminology,
+            where each operation is committed automatically and immediately.
+         </para>
+
+         <para>
+            JBoss Cache works out of the box with most popular transaction managers, and even provides an API where
+            custom transaction manager lookups can be written.
+         </para>
+
+         <para>
+            All of the above holds true for batches as well, which has similar behavior.
+         </para>
+      </section>
+
+
+      <section>
+         <title>Thread safety</title>
+         <para>
+            The cache is completely thread-safe. It employs multi-versioned concurrency control (MVCC) to ensure thread
+            safety between readers and writers, while maintaining a high degree of concurrency.  The specific MVCC implementation
+            used in JBoss Cache allows for reader threads to be completely free of locks and synchronized blocks, ensuring a very high
+            degree of performance for read-heavy applications.  It also uses custom, highly performant lock implementations
+            that employ modern compare-and-swap techniques for writer threads, which are tuned to multi-core CPU architectures.
+         </para>
+         <para>
+            Multi-versioned concurrency control (MVCC) is the default locking scheme since JBoss Cache 3.x.
+            Optimistic and pessimistic locking schemes from older versions of JBoss Cache are still available but are
+            deprecated in favor of MVCC, and will be removed in future releases.  Use of these deprecated locking
+            schemes are strongly discouraged.
+         </para>
+         <para>
+            The JBoss Cache MVCC implementation only supports READ_COMMITTED and REPEATABLE_READ isolation levels, corresponding
+            to their database equivalents.  See the section on <link linkend="transactions">transactions and concurrency</link> for details on MVCC.
+         </para>
+      </section>
+   </section>
+
+   <section>
+      <title>
+         Requirements
+      </title>
+      <para>
+         JBoss Cache requires a Java 5.0 (or newer) compatible virtual machine and set of libraries, and is developed
+         and tested on Sun's JDK 5.0 and JDK 6.
+      </para>
+      <para>
+         There is a way to build JBoss Cache as a Java 1.4.x compatible binary using
+         <ulink url="http://www.jboss.org/community/docs/DOC-10738">JBossRetro</ulink>
+         to retroweave the Java 5.0 binaries. However, Red Hat Inc. does not offer professional support around the
+         retroweaved
+         binary at this time and the Java 1.4.x compatible binary is not in the binary distribution. See
+         <ulink url="http://www.jboss.org/community/docs/DOC-10263">this wiki</ulink>
+         page for
+         details on building the retroweaved binary for yourself.
+      </para>
+      <para>
+         In addition to Java 5.0, at a minimum, JBoss Cache has dependencies on
+         <ulink url="http://www.jgroups.org">JGroups</ulink>, and Apache's
+         <ulink url="http://jakarta.apache.org/commons/logging/">commons-logging</ulink>. JBoss Cache ships with all
+         dependent libraries necessary to run out of the box, as well as several optional jars for optional features.
+      </para>
+   </section>
+
+   <section>
+      <title>License</title>
+      <para>
+         JBoss Cache is an open source project, using the business and OEM-friendly
+         <ulink url="http://www.opensource.org/">OSI-approved</ulink>
+         <ulink url="http://www.gnu.org/copyleft/lesser.html">LGPL license.</ulink>
+         Commercial development support, production support and training for JBoss Cache is available through
+         <ulink url="http://www.jboss.com">JBoss, a division of Red Hat Inc.</ulink>
+      </para>
+   </section>
+</chapter>

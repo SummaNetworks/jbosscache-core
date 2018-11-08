@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jbosscache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns="urn:jboss:jbosscache-core:config:3.1">
+   <locking isolationLevel="SERIALIZABLE" lockAcquisitionTimeout="1" nodeLockingScheme="optimistic"/>
+   <transaction transactionManagerLookupClass="org.jboss.cache.transaction.GenericTransactionManagerLookup"/>
+   <clustering clusterName="CloneCluster">
+      <stateRetrieval fetchInMemoryState="false" timeout="3"/>
+      <jgroupsConfig multiplexerStack="udp">
+         <UDP mcast_addr="228.10.10.10" mcast_port="45588" tos="8" ucast_recv_buf_size="20000000"
+              ucast_send_buf_size="640000" mcast_recv_buf_size="25000000" mcast_send_buf_size="640000" loopback="false"
+              discard_incompatible_packets="true" max_bundle_size="64000" max_bundle_timeout="30"
+              use_incoming_packet_handler="true" ip_ttl="2" enable_bundling="false" enable_diagnostics="true"
+              use_concurrent_stack="true" thread_naming_pattern="pl" thread_pool.enabled="true"
+              thread_pool.min_threads="1" thread_pool.max_threads="25" thread_pool.keep_alive_time="30000"
+              thread_pool.queue_enabled="true" thread_pool.queue_max_size="10" thread_pool.rejection_policy="Run"
+              oob_thread_pool.enabled="true" oob_thread_pool.min_threads="1" oob_thread_pool.max_threads="4"
+              oob_thread_pool.keep_alive_time="10000" oob_thread_pool.queue_enabled="true"
+              oob_thread_pool.queue_max_size="10" oob_thread_pool.rejection_policy="Run"/>
+         <PING timeout="2000" num_initial_members="3"/>
+         <MERGE2 max_interval="30000" min_interval="10000"/>
+         <FD_SOCK/>
+         <FD timeout="10000" max_tries="5" shun="true"/>
+         <VERIFY_SUSPECT timeout="1500"/>
+         <pbcast.NAKACK use_mcast_xmit="false" gc_lag="0" retransmit_timeout="300,600,1200,2400,4800"
+                        discard_delivered_msgs="true"/>
+         <UNICAST timeout="300,600,1200,2400,3600"/>
+         <pbcast.STABLE stability_delay="1000" desired_avg_gossip="50000" max_bytes="400000"/>
+         <pbcast.GMS print_local_addr="true" join_timeout="5000" shun="false" view_bundling="true"
+                     view_ack_collection_timeout="5000"/>
+         <FRAG2 frag_size="60000"/>
+         <pbcast.STREAMING_STATE_TRANSFER use_reading_thread="true"/>
+         <pbcast.FLUSH timeout="0"/>
+      </jgroupsConfig>
+      <sync replTimeout="2"/>
+      <buddy enabled="true" poolName="cloneGroup" communicationTimeout="7">
+         <dataGravitation auto="false" removeOnFind="true" searchBackupTrees="true"/>
+         <locator class="org.jboss.cache.buddyreplication.NextMemberBuddyLocator">
+            <properties>
+               numBuddies = 11
+               ignoreColocatedBuddies = true
+            </properties>
+         </locator>
+      </buddy>
+
+   </clustering>
+   <eviction wakeUpInterval="45000">
+      <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm" eventQueueSize="4">
+         <property name="maxNodes" value="5000" />
+         <property name="timeToLive" value="1000000" />
+         <property name="maxAge" value="15000" />
+      </default>
+      <region name="/fifo" algorithmClass="org.jboss.cache.eviction.FIFOAlgorithm">
+         <property name="maxNodes" value="5000" />
+      </region>
+      <region name="/mru" algorithmClass="org.jboss.cache.eviction.MRUAlgorithm">
+         <property name="maxNodes" value="10000" />
+      </region>
+      <region name="/lfu" algorithmClass="org.jboss.cache.eviction.LFUAlgorithm">
+         <property name="maxNodes" value="5000" />
+         <property name="minNodes" value="4000" />
+      </region>
+   </eviction>
+   <loaders passivation="false" shared="true">
+      <preload>
+         <node fqn="/"/>
+      </preload>
+      <loader class="org.jboss.cache.loader.FileCacheLoader" async="false" fetchPersistentState="true"
+              ignoreModifications="false">
+         <properties>
+            location=/tmp/FileCacheLoader
+         </properties>
+         <singletonStore enabled="false">
+            <properties>
+               pushStateWhenCoordinator=true
+               pushStateWhenCoordinatorTimeout=5000
+            </properties>
+         </singletonStore>
+      </loader>
+      <loader class="org.jboss.cache.loader.bdbje.BdbjeCacheLoader" async="false" fetchPersistentState="false"
+              ignoreModifications="false">
+         <properties>
+            location=/tmp/BdbjeCacheLoader
+         </properties>
+         <singletonStore enabled="false">
+            <properties>
+               pushStateWhenCoordinator=true
+               pushStateWhenCoordinatorTimeout=5000
+            </properties>
+         </singletonStore>
+      </loader>
+      <loader class="org.jboss.cache.loader.jdbm.JdbmCacheLoader" async="false" fetchPersistentState="false"
+              ignoreModifications="false">
+         <properties>
+            location=/tmp/JdbmCacheLoader
+         </properties>
+         <singletonStore enabled="false">
+            <properties>
+               pushStateWhenCoordinator=true
+               pushStateWhenCoordinatorTimeout=5000
+            </properties>
+         </singletonStore>
+      </loader>
+      <loader class="org.jboss.cache.loader.JDBCCacheLoader" async="false" fetchPersistentState="false"
+              ignoreModifications="false">
+         <properties>
+            cache.jdbc.driver=com.foo.jdbc.Driver
+            cache.jdbc.url=foo://driver
+            cache.jdbc.user=sa
+            cache.jdbc.password=secret
+         </properties>
+         <singletonStore enabled="false">
+            <properties>
+               pushStateWhenCoordinator=true
+               pushStateWhenCoordinatorTimeout=5000
+            </properties>
+         </singletonStore>
+      </loader>
+      <loader class="org.jboss.cache.loader.TcpDelegatingCacheLoader" async="false" fetchPersistentState="false"
+              ignoreModifications="false">
+         <properties>
+            host=127.0.0.1\nport=12121
+         </properties>
+         <singletonStore enabled="false">
+            <properties>
+               pushStateWhenCoordinator=true
+               pushStateWhenCoordinatorTimeout=5000
+            </properties>
+         </singletonStore>
+      </loader>
+      <loader class="org.jboss.cache.loader.ClusteredCacheLoader" async="false" fetchPersistentState="false"
+              ignoreModifications="false">
+         <properties>
+            timeout=500
+         </properties>
+         <singletonStore enabled="false">
+            <properties>
+               pushStateWhenCoordinator=true
+               pushStateWhenCoordinatorTimeout=5000
+            </properties>
+         </singletonStore>
+      </loader>
+   </loaders>
+</jbosscache>

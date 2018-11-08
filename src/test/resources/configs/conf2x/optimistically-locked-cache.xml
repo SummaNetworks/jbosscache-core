@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ===================================================================== -->
+<!--                                                                       -->
+<!--  Sample TreeCache Service Configuration                               -->
+<!--                                                                       -->
+<!-- ===================================================================== -->
+
+<server>
+
+   <!-- ==================================================================== -->
+   <!-- Defines TreeCache configuration                                      -->
+   <!-- ==================================================================== -->
+
+   <mbean code="org.jboss.cache.jmx.CacheJmxWrapper"
+          name="jboss.cache:service=TreeCache">
+
+      <depends>jboss:service=Naming</depends>
+      <depends>jboss:service=TransactionManager</depends>
+
+      <!--
+          Configure the TransactionManager
+      -->
+      <attribute name="TransactionManagerLookupClass">org.jboss.cache.transaction.GenericTransactionManagerLookup
+      </attribute>
+
+      <attribute name="FetchInMemoryState">false</attribute>
+
+      <!--  Whether each interceptor should have an mbean
+registered to capture and display its statistics.  -->
+      <attribute name="UseInterceptorMbeans">true</attribute>
+
+      <!--
+          Node locking scheme:
+              OPTIMISTIC
+              PESSIMISTIC (default)
+      -->
+      <attribute name="NodeLockingScheme">Optimistic</attribute>
+
+      <!--
+          Node locking level : SERIALIZABLE
+                               REPEATABLE_READ (default)
+                               READ_COMMITTED
+                               READ_UNCOMMITTED
+                               NONE
+      -->
+      <attribute name="IsolationLevel">READ_COMMITTED</attribute>
+
+
+      <!--
+           Valid modes are LOCAL
+                           REPL_ASYNC
+                           REPL_SYNC
+      -->
+      <attribute name="CacheMode">REPL_ASYNC</attribute>
+      <attribute name="UseReplicationQueue">true</attribute>
+
+      <!-- Max number of milliseconds to wait for a lock acquisition -->
+      <attribute name="LockAcquisitionTimeout">10000</attribute>
+
+      <attribute name="EvictionPolicyConfig">
+         <config>
+            <attribute name="wakeUpIntervalSeconds">1</attribute>
+            <!-- Name of the DEFAULT eviction policy class.-->
+            <attribute name="policyClass">org.jboss.cache.eviction.LRUPolicy</attribute>
+
+            <region name="/_default_">
+               <attribute name="maxNodes">10</attribute>
+               <attribute name="timeToLiveSeconds">8</attribute>
+               <attribute name="maxAgeSeconds">5</attribute>
+            </region>
+            <region name="/testingRegion">
+               <attribute name="maxNodes">10</attribute>
+               <attribute name="timeToLiveSeconds">1</attribute>
+               <attribute name="maxAgeSeconds">2</attribute>
+            </region>
+            <region name="/timeBased">
+               <attribute name="maxNodes">10</attribute>
+               <attribute name="timeToLiveSeconds">1</attribute>
+               <attribute name="maxAgeSeconds">1</attribute>
+            </region>
+         </config>
+      </attribute>
+
+   </mbean>
+</server>

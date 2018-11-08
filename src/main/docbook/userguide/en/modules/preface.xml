@@ -1,0 +1,55 @@
+<preface id="preface">
+   <title>Preface</title>
+
+   <para>
+      This is the official JBoss Cache Users' Guide. Along with its accompanying documents (an FAQ, a tutorial and a
+      whole set of documents on POJO Cache), this is freely available on the JBoss Cache <ulink url="http://www.jboss.org/jbosscache">documentation website</ulink>.
+   </para>
+   <para>
+      When used, JBoss Cache refers to JBoss Cache Core, a tree-structured, clustered, transactional cache.
+      POJO Cache, also a part of the JBoss Cache distribution, is documented separately. (POJO Cache is a cache that
+      deals with Plain Old Java Objects, complete with object relationships, with the ability to cluster such POJOs
+      while maintaining their relationships. Please see the POJO Cache documentation for more information about this.)
+   </para>
+
+   <para>
+      This book is targeted at developers wishing to use JBoss Cache as either a standalone in-memory cache,
+      a distributed or replicated cache, a clustering library, or an in-memory database.  It is targeted at application
+      developers who wish to use JBoss Cache in their code base, as well as "OEM" developers who wish to build on and
+      extend JBoss Cache features. As such, this book is split into two major sections - one detailing the "User" API
+      and the other going much deeper into specialist topics and the JBoss Cache architecture.
+   </para>
+
+   <para>
+      In general, a good knowledge of the Java programming language along with a strong appreciation and understanding
+      of transactions and concurrent programming is necessary. No prior knowledge of JBoss Application Server is expected
+      or required.
+   </para>
+
+   <para>
+      For further discussion, use the user forum available on the JBoss Cache
+      <ulink url="http://www.jboss.org/jbosscache">website.</ulink>  We also provide a mechanism for
+      tracking bug reports and feature requests on the JBoss Cache <ulink url="http://jira.jboss.com/jira/browse/JBCACHE">JIRA issue tracker</ulink>.
+   </para>
+   <para>
+      If you are interested in the development of JBoss Cache or in translating this documentation into other languages,
+      we'd love to hear from you. Please post a message on the JBoss Cache
+      <ulink url="http://www.jboss.org/jbosscache">user forum</ulink>
+      or contact us by using the JBoss Cache <ulink url="https://lists.jboss.org/mailman/listinfo/jbosscache-dev">developer mailing list</ulink>.
+   </para>
+
+   <para>
+      This book is specifically targeted at the JBoss Cache release of the same version number. It may not apply to
+      older or newer releases of JBoss Cache. It is important that you use the documentation appropriate to the version
+      of JBoss Cache you intend to use.
+   </para>
+
+   <para>
+      I always appreciate feedback, suggestions and corrections, and these should be directed to the
+      <ulink url="https://lists.jboss.org/mailman/listinfo/jbosscache-dev">developer mailing list</ulink> rather than
+      direct emails to any of the authors.  We hope you find this book useful, and wish you happy reading!
+   </para>
+   <para>
+      <emphasis role="bold">Manik Surtani</emphasis>, October 2008
+   </para>
+</preface>

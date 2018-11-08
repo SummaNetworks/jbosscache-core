@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jbosscache  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns="urn:jboss:jbosscache-core:config:3.1">
+
+   <locking isolationLevel="REPEATABLE_READ" lockAcquisitionTimeout="15000"/>
+   <transaction transactionManagerLookupClass="org.jboss.cache.transaction.GenericTransactionManagerLookup"/>
+   <clustering>
+      <stateRetrieval timeout="20000"/>
+      <jgroupsConfig configFile="udp.xml" />
+   </clustering>
+   
+   <eviction wakeUpInterval="5000">
+      <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm" eventQueueSize="200000">
+         <property name="maxNodes" value="5000" />
+         <property name="timeToLive" value="1000000" />
+      </default>
+      <region name="/org/jboss/data" algorithmClass="org.jboss.cache.eviction.FIFOAlgorithm">
+         <property name="maxNodes" value="5000" />
+      </region>
+      <region name="/test/" algorithmClass="org.jboss.cache.eviction.MRUAlgorithm">
+         <property name="maxNodes" value="10000" />
+      </region>
+      <region name="/maxAgeTest/">
+         <property name="maxNodes" value="10000" />
+         <property name="timeToLive" value="8000" />
+         <property name="maxAge" value="10000" />
+      </region>
+   </eviction>
+</jbosscache>

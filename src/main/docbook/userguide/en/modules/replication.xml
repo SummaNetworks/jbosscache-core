@@ -1,0 +1,697 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter id="clustering">
+   <title>Cache Modes and Clustering</title>
+
+   <para>This chapter talks about aspects around clustering JBoss Cache.</para>
+
+   <section>
+      <title>Cache Replication Modes</title>
+
+      <para>JBoss Cache can be configured to be either local (standalone) or
+         clustered. If in a cluster, the cache can be configured to replicate
+         changes, or to invalidate changes. A detailed discussion on this
+         follows.
+      </para>
+
+      <section>
+         <title>Local Mode</title>
+
+         <para>Local caches don't join a cluster and don't communicate with other
+            caches in a cluster. The dependency on the
+            JGroups library is still there, although a JGroups channel is not
+            started.
+         </para>
+      </section>
+
+      <section>
+         <title>Replicated Caches</title>
+
+         <para>Replicated caches replicate all changes to some or all of the other cache
+            instances in the cluster. Replication can either happen after each
+            modification (no transactions or batches), or at the end of a transaction or batch.
+         </para>
+
+         <para>Replication can be synchronous or asynchronous. Use of either one
+            of the options is application dependent. Synchronous replication blocks
+            the caller (e.g. on a
+            <literal>put()</literal>
+            ) until the modifications
+            have been replicated successfully to all nodes in a cluster.
+            Asynchronous replication performs replication in the background (the
+            <literal>put()</literal>
+            returns immediately). JBoss Cache also offers a
+            replication queue, where modifications are replicated periodically (i.e.
+            interval-based), or when the queue size exceeds a number of elements, or
+            a combination thereof.  A replication queue can therefore offer much higher performance as the actual
+            replication is performed by a background thread.
+         </para>
+
+         <para>Asynchronous replication is faster (no caller blocking), because
+            synchronous replication requires acknowledgments from all nodes in a
+            cluster that they received and applied the modification successfully
+            (round-trip time). However, when a synchronous replication returns
+            successfully, the caller knows for sure that all modifications have been
+            applied to all cache instances, whereas this is not be the case with asynchronous
+            replication. With asynchronous replication, errors are simply written to
+            a log. Even when using transactions, a transaction may succeed but
+            replication may not succeed on all cache instances.
+         </para>
+
+         <section id="replication.tx">
+            <title>Replicated Caches and Transactions</title>
+
+            <para>When using transactions, replication only occurs at the
+               transaction boundary - i.e., when a transaction commits. This results
+               in minimizing replication traffic since a single modification is
+               broadcast rather than a series of individual modifications, and can be
+               a lot more efficient than not using transactions. Another effect of
+               this is that if a transaction were to roll back, nothing is broadcast
+               across a cluster.
+            </para>
+
+            <para>Depending on whether you are running your cluster in
+               asynchronous or synchronous mode, JBoss Cache will use either a single
+               phase or
+               <ulink
+                     url="http://en.wikipedia.org/wiki/Two-phase_commit_protocol">two phase
+                  commit
+               </ulink>
+               protocol, respectively.
+            </para>
+
+            <section>
+               <title>One Phase Commits</title>
+
+               <para>Used when your cache mode is REPL_ASYNC. All modifications are
+                  replicated in a single call, which instructs remote caches to apply
+                  the changes to their local in-memory state and commit locally.
+                  Remote errors/rollbacks are never fed back to the originator of the
+                  transaction since the communication is asynchronous.
+               </para>
+            </section>
+
+            <section>
+               <title>Two Phase Commits</title>
+
+               <para>Used when your cache mode is REPL_SYNC. Upon committing your
+                  transaction, JBoss Cache broadcasts a prepare call, which carries
+                  all modifications relevant to the transaction. Remote caches then
+                  acquire local locks on their in-memory state and apply the
+                  modifications. Once all remote caches respond to the prepare call,
+                  the originator of the transaction broadcasts a commit. This
+                  instructs all remote caches to commit their data. If any of the
+                  caches fail to respond to the prepare phase, the originator
+                  broadcasts a rollback.
+               </para>
+
+               <para>Note that although the prepare phase is synchronous, the
+                  commit and rollback phases are asynchronous. This is because
+                  <ulink
+                        url="http://java.sun.com/products/jta/">Sun's JTA
+                     specification
+                  </ulink>
+                  does not specify how transactional resources
+                  should deal with failures at this stage of a transaction; and other
+                  resources participating in the transaction may have indeterminate
+                  state anyway. As such, we do away with the overhead of synchronous
+                  communication for this phase of the transaction. That said, they can
+                  be forced to be synchronous using the
+                  <literal>SyncCommitPhase</literal>
+                  and
+                  <literal>SyncRollbackPhase</literal>
+                  configuration
+                  attributes.
+               </para>
+            </section>
+         </section>
+
+         <section id="br">
+            <title>Buddy Replication</title>
+
+            <para>Buddy Replication allows you to suppress replicating your data
+               to all instances in a cluster. Instead, each instance picks one or
+               more 'buddies' in the cluster, and only replicates to these specific
+               buddies. This greatly helps scalability as there is no longer a memory
+               and network traffic impact every time another instance is added to a
+               cluster.
+            </para>
+
+            <para>One of the most common use cases of Buddy Replication is when a
+               replicated cache is used by a servlet container to store HTTP session
+               data. One of the pre-requisites to buddy replication working well and
+               being a real benefit is the use of
+               <emphasis>session
+                  affinity
+               </emphasis>
+               , more casually known as
+               <emphasis>sticky
+                  sessions
+               </emphasis>
+               in HTTP session replication speak. What this means
+               is that if certain data is frequently accessed, it is desirable that
+               this is always accessed on one instance rather than in a round-robin
+               fashion as this helps the cache cluster optimize how it chooses
+               buddies, where it stores data, and minimizes replication
+               traffic.
+            </para>
+
+            <para>If this is not possible, Buddy Replication may prove to be more
+               of an overhead than a benefit.
+            </para>
+
+            <section>
+               <title>Selecting Buddies</title>
+
+               <figure>
+                  <title>BuddyLocator</title>
+
+                  <mediaobject>
+                     <imageobject>
+                        <imagedata fileref="BuddyReplication.png"/>
+                     </imageobject>
+                  </mediaobject>
+               </figure>
+
+               <para>Buddy Replication uses an instance of a
+                  <literal>BuddyLocator</literal>
+                  which contains the logic used to
+                  select buddies in a network. JBoss Cache currently ships with a
+                  single implementation,
+                  <literal>NextMemberBuddyLocator</literal>
+                  ,
+                  which is used as a default if no implementation is provided. The
+                  <literal>NextMemberBuddyLocator</literal>
+                  selects the next member in
+                  the cluster, as the name suggests, and guarantees an even spread of
+                  buddies for each instance.
+               </para>
+
+               <para>The
+                  <literal>NextMemberBuddyLocator</literal>
+                  takes in 2
+                  parameters, both optional.
+                  <itemizedlist>
+                     <listitem>
+
+
+                        <literal>numBuddies</literal>
+
+                        - specifies how many buddies each instance should pick to back its data onto. This defaults to
+                        1.
+                     </listitem>
+
+                     <listitem>
+
+
+                        <literal>ignoreColocatedBuddies</literal>
+
+                        - means that each instance will
+
+                        <emphasis>try</emphasis>
+
+                        to select a buddy on a different physical host. If not able to do so though, it will fall back
+                        to co-located instances. This defaults to
+
+                        <literal>true</literal>
+
+                        .
+                     </listitem>
+                  </itemizedlist>
+               </para>
+            </section>
+
+            <section>
+               <title>BuddyPools</title>
+
+               <para>Also known as
+                  <emphasis>replication groups</emphasis>
+                  , a buddy
+                  pool is an optional construct where each instance in a cluster may
+                  be configured with a buddy pool name. Think of this as an 'exclusive
+                  club membership' where when selecting buddies,
+                  <literal>BuddyLocator</literal>
+                  s that support buddy pools would try
+                  and select buddies sharing the same buddy pool name. This allows
+                  system administrators a degree of flexibility and control over how
+                  buddies are selected. For example, a sysadmin may put two instances
+                  on two separate physical servers that may be on two separate
+                  physical racks in the same buddy pool. So rather than picking an
+                  instance on a different host on the same rack,
+                  <literal>BuddyLocator</literal>
+                  s would rather pick the instance in
+                  the same buddy pool, on a separate rack which may add a degree of
+                  redundancy.
+               </para>
+            </section>
+
+            <section>
+               <title>Failover</title>
+
+               <para>In the unfortunate event of an instance crashing, it is
+                  assumed that the client connecting to the cache (directly or
+                  indirectly, via some other service such as HTTP session replication)
+                  is able to redirect the request to any other random cache instance
+                  in the cluster. This is where a concept of Data Gravitation comes
+                  in.
+               </para>
+
+               <para>Data Gravitation is a concept where if a request is made on a
+                  cache in the cluster and the cache does not contain this
+                  information, it asks other instances in the cluster for the
+                  data. In other words, data is lazily transferred, migrating
+                  <emphasis>only</emphasis>
+                  when other nodes ask for it. This strategy
+                  prevents a network storm effect where lots of data is pushed around
+                  healthy nodes because only one (or a few) of them die.
+               </para>
+
+               <para>If the data is not found in the primary section of some node,
+                  it would (optionally) ask other instances to check in the backup
+                  data they store for other caches.
+                  This means that even if a cache containing your session dies, other
+                  instances will still be able to access this data by asking the cluster
+                  to search through their backups for this data.
+               </para>
+
+               <para>Once located, this data is transferred to the instance
+                  which requested it and is added to this instance's data tree.
+                  The data is then (optionally) removed from all other instances
+                  (and backups) so that if session affinity is used, the affinity
+                  should now be to this new cache instance which has just
+                  <emphasis>taken
+                     ownership
+                  </emphasis>
+                  of this data.
+               </para>
+
+               <para>Data Gravitation is implemented as an interceptor. The
+                  following (all optional) configuration properties pertain to data
+                  gravitation.
+                  <itemizedlist>
+                     <listitem>
+
+
+                        <literal>dataGravitationRemoveOnFind</literal>
+
+                        - forces all remote caches that own the data or hold backups for the data to remove that data,
+                        thereby making the requesting cache the new data owner. This removal, of course, only happens
+                        after the new owner finishes replicating data to its buddy. If set to
+
+                        <literal>false</literal>
+
+                        an evict is broadcast instead of a remove, so any state persisted in cache loaders will remain.
+                        This is useful if you have a shared cache loader configured. Defaults to
+
+                        <literal>true</literal>
+
+                        .
+                     </listitem>
+
+                     <listitem>
+
+
+                        <literal>dataGravitationSearchBackupTrees</literal>
+
+                        - Asks remote instances to search through their backups as well as main data trees. Defaults to
+
+                        <literal>true</literal>
+
+                        . The resulting effect is that if this is
+
+                        <literal>true</literal>
+
+                        then backup nodes can respond to data gravitation requests in addition to data owners.
+                     </listitem>
+
+                     <listitem>
+
+
+                        <literal>autoDataGravitation</literal>
+
+                        - Whether data gravitation occurs for every cache miss. By default this is set to
+
+                        <literal>false</literal>
+
+                        to prevent unnecessary network calls. Most use cases will know when it may need to gravitate
+                        data and will pass in an
+
+                        <literal>Option</literal>
+
+                        to enable data gravitation on a per-invocation basis. If
+
+                        <literal>autoDataGravitation</literal>
+
+                        is
+
+                        <literal>true</literal>
+
+                        this
+
+                        <literal>Option</literal>
+
+                        is unnecessary.
+                     </listitem>
+                  </itemizedlist>
+               </para>
+            </section>
+
+            <section>
+               <title>Configuration</title>
+
+               See the <link linkend="configuration_reference_chapter">configuration reference section</link> for details on configuring buddy replication.
+               </section>
+         </section>
+      </section>
+   </section>
+
+   <section>
+      <title>Invalidation</title>
+
+      <para>If a cache is configured for invalidation rather than replication,
+         every time data is changed in a cache other caches in the cluster receive
+         a message informing them that their data is now stale and should be
+         evicted from memory. Invalidation, when used with a shared cache loader
+         (see chapter on <link linkend="cache_loaders">cache loaders</link>) would cause remote caches to refer to the
+         shared cache loader to retrieve modified data. The benefit of this is
+         twofold: network traffic is minimized as invalidation messages are very
+         small compared to replicating updated data, and also that other caches in
+         the cluster look up modified data in a lazy manner, only when
+         needed.
+      </para>
+
+      <para>Invalidation messages are sent after each modification (no
+         transactions or batches), or at the end of a transaction or batch, upon successful commit.
+         This is usually more efficient as invalidation messages can be optimized
+         for the transaction as a whole rather than on a per-modification
+         basis.
+      </para>
+
+      <para>Invalidation too can be synchronous or asynchronous, and just as in
+         the case of replication, synchronous invalidation blocks until all caches
+         in the cluster receive invalidation messages and have evicted stale data
+         while asynchronous invalidation works in a 'fire-and-forget' mode, where
+         invalidation messages are broadcast but doesn't block and wait for
+         responses.
+      </para>
+   </section>
+
+   <section>
+      <title>State Transfer</title>
+
+      <para>
+         <emphasis>State Transfer</emphasis>
+         refers to the process by which a
+         JBoss Cache instance prepares itself to begin providing a service by
+         acquiring the current state from another cache instance and integrating
+         that state into its own state.
+      </para>
+
+      <section>
+         <title>State Transfer Types</title>
+
+         <para>There are three divisions of state transfer types depending on a
+            point of view related to state transfer. First, in the context of
+            particular state transfer implementation, the underlying plumbing, there
+            are two starkly different state transfer types: byte array and streaming
+            based state transfer. Second, state transfer can be full or partial
+            state transfer depending on a subtree being transferred. Entire cache
+            tree transfer represents full transfer while transfer of a particular
+            subtree represents partial state transfer. And finally state transfer
+            can be "in-memory" and "persistent" transfer depending on a particular
+            use of cache.
+         </para>
+      </section>
+
+      <section>
+         <title>Byte array and streaming based state transfer</title>
+
+         <para>Byte array based transfer was a default and only transfer
+            methodology for cache in all previous releases up to 2.0. Byte array
+            based transfer loads entire state transferred into a byte array and
+            sends it to a state receiving member. Major limitation of this approach
+            is that the state transfer that is very large (&gt;1GB) would likely
+            result in OutOfMemoryException. Streaming state transfer provides an
+            InputStream to a state reader and an OutputStream to a state writer.
+            OutputStream and InputStream abstractions enable state transfer in byte
+            chunks thus resulting in smaller memory requirements. For example, if
+            application state is represented as a tree whose aggregate size is 1GB,
+            rather than having to provide a 1GB byte array streaming state transfer
+            transfers the state in chunks of N bytes where N is user
+            configurable.
+         </para>
+
+         <para>Byte array and streaming based state transfer are completely API
+            transparent, interchangeable, and statically configured through a
+            standard cache configuration XML file. Refer to JGroups documentation on
+            how to change from one type of transfer to another.
+         </para>
+      </section>
+
+      <section>
+         <title>Full and partial state transfer</title>
+
+         <para>If either in-memory or persistent state transfer is enabled, a
+            full or partial state transfer will be done at various times, depending
+            on how the cache is used. "Full" state transfer refers to the transfer
+            of the state related to the entire tree -- i.e. the root node and all
+            nodes below it. A "partial" state transfer is one where just a portion
+            of the tree is transferred -- i.e. a node at a given Fqn and all nodes
+            below it.
+         </para>
+
+         <para>If either in-memory or persistent state transfer is enabled, state
+            transfer will occur at the following times:
+         </para>
+
+         <orderedlist>
+            <listitem>
+               <para>Initial state transfer. This occurs when the cache is first
+                  started (as part of the processing of the
+                  <literal>start()</literal>
+                  method). This is a full state transfer. The state is retrieved from
+                  the cache instance that has been operational the longest.
+                  <footnote>
+                     <para>The longest operating cache instance is always, in JGroups
+                        terms, the coordinator.
+                     </para>
+                  </footnote>
+                  If there is any problem receiving or integrating the state, the cache
+                  will not start.
+               </para>
+
+               <para>Initial state transfer will occur unless:</para>
+
+               <orderedlist>
+                  <listitem>
+                     <para>The cache's
+                        <literal>InactiveOnStartup</literal>
+                        property
+                        is
+                        <literal>true</literal>
+                        . This property is used in
+                        conjunction with region-based marshalling.
+                     </para>
+                  </listitem>
+
+                  <listitem>
+                     <para>Buddy replication is used. See below for more on state
+                        transfer with buddy replication.
+                     </para>
+                  </listitem>
+               </orderedlist>
+            </listitem>
+
+            <listitem>
+               <para>Partial state transfer following region activation. When
+                  region-based marshalling is used, the application needs to register
+                  a specific class loader with the cache. This class loader is used
+                  to unmarshall the state for a specific region (subtree) of the cache.
+               </para>
+
+               <para>After registration, the application calls
+                  <literal>cache.getRegion(fqn, true).activate()</literal>
+                  ,
+                  which initiates a partial state transfer of the relevant subtree's
+                  state. The request is first made to the oldest cache instance in the
+                  cluster. However, if that instance responds with no state, it is then
+                  requested from each instance in turn until one either provides state
+                  or all instances have been queried.
+               </para>
+
+               <para>Typically when region-based marshalling is used, the cache's
+                  <literal>InactiveOnStartup</literal>
+                  property is set to
+                  <literal>true</literal>
+                  . This suppresses initial state transfer,
+                  which would fail due to the inability to deserialize the transferred
+                  state.
+               </para>
+            </listitem>
+
+            <listitem>
+               <para>Buddy replication. When buddy replication is used, initial
+                  state transfer is disabled. Instead, when a cache instance joins the
+                  cluster, it becomes the buddy of one or more other instances, and
+                  one or more other instances become its buddy. Each time an instance
+                  determines it has a new buddy providing backup for it, it pushes
+                  its current state to the new buddy. This "pushing" of state to the
+                  new buddy is slightly different from other forms of state transfer,
+                  which are based on a "pull" approach (i.e. recipient asks for and
+                  receives state). However, the process of preparing and integrating
+                  the state is the same.
+               </para>
+
+               <para>This "push" of state upon buddy group formation only occurs if
+                  the
+                  <literal>InactiveOnStartup</literal>
+                  property is set to
+                  <literal>false</literal>
+                  . If it is
+                  <literal>true</literal>
+                  , state
+                  transfer amongst the buddies only occurs when the application
+                  activates the region on the various members of the group.
+               </para>
+
+               <para>Partial state transfer following a region activation call is
+                  slightly different in the buddy replication case as well. Instead of
+                  requesting the partial state from one cache instance, and trying all
+                  instances until one responds, with buddy replication the instance
+                  that is activating a region will request partial state from each
+                  instance for which it is serving as a backup.
+               </para>
+            </listitem>
+         </orderedlist>
+      </section>
+
+      <section>
+         <title>Transient ("in-memory") and persistent state transfer</title>
+
+         <para>The state that is acquired and integrated can consist of two basic
+            types:
+         </para>
+
+         <orderedlist>
+            <listitem>
+               <para>"Transient" or "in-memory" state. This consists of the actual
+                  in-memory state of another cache instance - the contents of the
+                  various in-memory nodes in the cache that is providing state are
+                  serialized and transferred; the recipient deserializes the data,
+                  creates corresponding nodes in its own in-memory tree, and populates
+                  them with the transferred data.
+               </para>
+
+               <para>"In-memory" state transfer is enabled by setting the cache's
+                  <literal>FetchInMemoryState</literal>
+                  configuration attribute to
+                  <literal>true</literal>
+                  .
+               </para>
+            </listitem>
+
+            <listitem>
+               <para>"Persistent" state. Only applicable if a non-shared cache
+                  loader is used. The state stored in the state-provider cache's
+                  persistent store is deserialized and transferred; the recipient
+                  passes the data to its own cache loader, which persists it to the
+                  recipient's persistent store.
+               </para>
+
+               <para>"Persistent" state transfer is enabled by setting a cache
+                  loader's
+                  <literal>fetchPersistentState</literal>
+                  attribute to
+                  <literal>true</literal>
+                  . If multiple cache loaders are configured
+                  in a chain, only one can have this property set to true; otherwise
+                  you will get an exception at startup.
+               </para>
+
+               <para>Persistent state transfer with a shared cache loader does not
+                  make sense, as the same persistent store that provides the data will
+                  just end up receiving it. Therefore, if a shared cache loader is
+                  used, the cache will not allow a persistent state transfer even if a
+                  cache loader has
+                  <literal>fetchPersistentState</literal>
+                  set to
+                  <literal>true</literal>
+                  .
+               </para>
+            </listitem>
+         </orderedlist>
+
+         <para>Which of these types of state transfer is appropriate depends on
+            the usage of the cache.
+         </para>
+
+         <orderedlist>
+            <listitem>
+               <para>If a write-through cache loader is used, the current cache
+                  state is fully represented by the persistent state. Data may have
+                  been evicted from the in-memory state, but it will still be in the
+                  persistent store. In this case, if the cache loader is not shared,
+                  persistent state transfer is used to ensure the new cache has the
+                  correct state. In-memory state can be transferred as well if the
+                  desire is to have a "hot" cache -- one that has all relevant data in
+                  memory when the cache begins providing service. (Note that the
+                  <literal><![CDATA[<preload>]]></literal>
+                  element in the
+                  <literal><![CDATA[<loaders>]]></literal>
+                  configuration element can be used as well to
+                  provide a "warm" or "hot" cache without requiring an in-memory state
+                  transfer. This approach somewhat reduces the burden on the cache
+                  instance providing state, but increases the load on the persistent
+                  store on the recipient side.)
+               </para>
+            </listitem>
+
+            <listitem>
+               <para>If a cache loader is used with passivation, the full
+                  representation of the state can only be obtained by combining the
+                  in-memory (i.e. non-passivated) and persistent (i.e. passivated)
+                  states. Therefore an in-memory state transfer is necessary. A
+                  persistent state transfer is necessary if the cache loader is not
+                  shared.
+               </para>
+            </listitem>
+
+            <listitem>
+               <para>If no cache loader is used and the cache is solely a
+                  write-aside cache (i.e. one that is used to cache data that can also
+                  be found in a persistent store, e.g. a database), whether or not
+                  in-memory state should be transferred depends on whether or not a
+                  "hot" cache is desired.
+               </para>
+            </listitem>
+         </orderedlist>
+      </section>
+
+      <section>
+          <title>Non-Blocking State Transfer</title>
+          <para>
+              New in JBoss Cache 3.1.0, Non-Blocking State Transfer (NBST) allows senders to generate and stream state while
+              not stopping handling their "work as usual" transactions.  This is particularly important if there is a large
+              volume of state, where generation and streaming of the state can take some time and can cause ongoing
+              transactions on the sender to time out and fail.
+          </para>
+          <para>
+              To achieve this, NBST should be enabled (see
+              configuration reference), and you need to be using MVCC as a node locking scheme.  In addition, you need to
+              use JGroups' STREAMING_STATE_TRANSFER protocol in your cluster properties.
+          </para>
+      </section>
+
+      <section>
+         <title>Configuring State Transfer</title>
+         <para>
+            To ensure state transfer behaves as expected, it is important that all nodes in the cluster are configured
+            with
+            the same settings for persistent and transient state. This is because byte array based transfers, when
+            requested,
+            rely only on the requester's configuration while stream based transfers rely on both the requester and
+            sender's
+            configuration, and this is expected to be identical.
+         </para>
+      </section>
+   </section>
+</chapter>

@@ -1,0 +1,327 @@
+<chapter id="jmx_reference">
+   <title>JMX References</title>
+   <section id="jmx_reference.statistics">
+      <title>JBoss Cache Statistics</title>
+      <para>
+         There is a whole wealth of information being gathered and exposed on to JMX for monitoring the cache.  Some
+         of these are detailed below:
+      </para>
+      <table>
+         <title>JBoss Cache JMX MBeans</title>
+         <tgroup cols="3">
+            <thead>
+               <row>
+                  <entry>MBean</entry>
+                  <entry>Attribute/Operation Name</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+            <tbody>
+               <row>
+                  <entry>DataContainerImpl</entry>
+                  <entry>getNumberOfAttributes()</entry>
+                  <entry>Returns the number of attributes in all nodes in the data container</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>getNumberOfNodes()</entry>
+                  <entry>Returns the number of nodes in the data container</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>printDetails()</entry>
+                  <entry>Prints details of the data container</entry>
+               </row>
+
+               <row>
+                  <entry>RPCManagerImpl</entry>
+                  <entry>localAddressString</entry>
+                  <entry>String representation of the local address</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>membersString</entry>
+                  <entry>String representation of the cluster view</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>statisticsEnabled</entry>
+                  <entry>Whether RPC statistics are being gathered</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>replicationCount</entry>
+                  <entry>Number of successful replications</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>replicationFailures</entry>
+                  <entry>Number of failed replications</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>successRatio</entry>
+                  <entry>RPC call success ratio</entry>
+               </row>
+
+               <row>
+                  <entry>RegionManagerImpl</entry>
+                  <entry>dumpRegions()</entry>
+                  <entry>Dumps a String representation of all registered regions, including eviction regions depicting their event queue sizes</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>numRegions</entry>
+                  <entry>Number of registered regions</entry>
+               </row>
+               <row>
+                  <entry>BuddyManager</entry>
+                  <entry>buddyGroup</entry>
+                  <entry>A String representation of the cache's buddy group</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>buddyGroupsIParticipateIn</entry>
+                  <entry>String representations of all buddy groups the cache participates in</entry>
+               </row>
+               <row>
+                  <entry>TransactionTable</entry>
+                  <entry>numberOfRegisteredTransactions</entry>
+                  <entry>The number of registered, ongoing transactions</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>transactionMap</entry>
+                  <entry>A String representation of all currently registered transactions mapped to internal GlobalTransaction instances</entry>
+               </row>
+
+               <row>
+                  <entry>MVCCLockManager</entry>
+                  <entry>concurrencyLevel</entry>
+                  <entry>The configured concurrency level</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>numberOfLocksAvailable</entry>
+                  <entry>Number of locks in the shared lock pool that are not used</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>numberOfLocksHeld</entry>
+                  <entry>Number of locks in the shared lock pool that are in use</entry>
+               </row>
+               <row>
+                  <entry></entry>
+                  <entry>testHashing(String fqn)</entry>
+                  <entry>Tests the spreading of locks across Fqns. For a given (String based) Fqn, this method returns the index in the lock array that it maps to.</entry>
+               </row>
+               <row>
+                                <entry>ActivationInterceptor</entry>
+                                <entry>Activations</entry>
+                                <entry>Number of passivated nodes that have been activated.</entry>
+                             </row>
+                             <row>
+                                <entry>CacheLoaderInterceptor</entry>
+                                <entry>CacheLoaderLoads</entry>
+                                <entry>Number of nodes loaded through a cache loader.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>CacheLoaderMisses</entry>
+                                <entry>Number of unsuccessful attempts to load a node through a cache loader.</entry>
+                             </row>
+                             <row>
+                                <entry>CacheMgmtInterceptor</entry>
+                                <entry>Hits</entry>
+                                <entry>Number of successful attribute retrievals.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>Misses</entry>
+                                <entry>Number of unsuccessful attribute retrievals.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>Stores</entry>
+                                <entry>Number of attribute store operations.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>Evictions</entry>
+                                <entry>Number of node evictions.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>NumberOfAttributes</entry>
+                                <entry>Number of attributes currently cached.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>NumberOfNodes</entry>
+                                <entry>Number of nodes currently cached.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>ElapsedTime</entry>
+                                <entry>Number of seconds that the cache has been running.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>TimeSinceReset</entry>
+                                <entry>Number of seconds since the cache statistics have been reset.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>AverageReadTime</entry>
+                                <entry>Average time in milliseconds to retrieve a cache attribute, including unsuccessful
+                                   attribute retrievals.
+                                </entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>AverageWriteTime</entry>
+                                <entry>Average time in milliseconds to write a cache attribute.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>HitMissRatio</entry>
+                                <entry>Ratio of hits to hits and misses. A hit is a get attribute operation that results in an object
+                                   being
+                                   returned to the client. The retrieval may be from a cache loader if the entry isn't in the local
+                                   cache.
+                                </entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>ReadWriteRatio</entry>
+                                <entry>Ratio of read operations to write operations. This is the ratio of cache hits and misses to
+                                   cache stores.
+                                </entry>
+                             </row>
+                             <row>
+                                <entry>CacheStoreInterceptor</entry>
+                                <entry>CacheLoaderStores</entry>
+                                <entry>Number of nodes written to the cache loader.</entry>
+                             </row>
+                             <row>
+                                <entry>InvalidationInterceptor</entry>
+                                <entry>Invalidations</entry>
+                                <entry>Number of cached nodes that have been invalidated.</entry>
+                             </row>
+                             <row>
+                                <entry>PassivationInterceptor</entry>
+                                <entry>Passivations</entry>
+                                <entry>Number of cached nodes that have been passivated.</entry>
+                             </row>
+                             <row>
+                                <entry>TxInterceptor</entry>
+                                <entry>Prepares</entry>
+                                <entry>Number of transaction prepare operations performed by this interceptor.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>Commits</entry>
+                                <entry>Number of transaction commit operations performed by this interceptor.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>Rollbacks</entry>
+                                <entry>Number of transaction rollbacks operations performed by this interceptor.</entry>
+                             </row>
+                             <row>
+                                <entry></entry>
+                                <entry>numberOfSyncsRegistered</entry>
+                                <entry>Number of synchronizations registered with the transaction manager pending completion and removal.</entry>
+                             </row>
+
+
+            </tbody>
+         </tgroup>
+      </table>
+   </section>
+
+   <section id="jmx_reference.notifications">
+      <title>JMX MBean Notifications</title>
+      <para>The following table depicts the JMX notifications available for JBoss Cache as well as the cache events to
+         which they correspond. These are the notifications that can be received through the
+         <literal>CacheJmxWrapper</literal>
+         MBean.
+         Each notification represents a single event published by JBoss Cache and provides user data corresponding to
+         the parameters of the event.
+      </para>
+      <table>
+         <title>JBoss Cache MBean Notifications</title>
+         <tgroup cols="3">
+            <thead>
+               <row>
+                  <entry>Notification Type</entry>
+                  <entry>Notification Data</entry>
+                  <entry>CacheListener Event</entry>
+               </row>
+            </thead>
+            <tbody>
+               <row>
+                  <entry>org.jboss.cache.CacheStarted</entry>
+                  <entry>String: cache service name</entry>
+                  <entry>@CacheStarted</entry>
+               </row>
+               <row>
+                  <entry>org.jboss.cache.CacheStopped</entry>
+                  <entry>String: cache service name</entry>
+                  <entry>@CacheStopped</entry>
+               </row>
+               <row>
+                  <entry>org.jboss.cache.NodeCreated</entry>
+                  <entry>String: fqn, boolean: isPre, boolean: isOriginLocal</entry>
+                  <entry>@NodeCreated</entry>
+               </row>
+               <row>
+                  <entry>org.jboss.cache.NodeEvicted</entry>
+                  <entry>String: fqn, boolean: isPre, boolean: isOriginLocal</entry>
+                  <entry>@NodeEvicted</entry>
+               </row>
+               <row>
+                  <entry>org.jboss.cache.NodeLoaded</entry>
+                  <entry>String: fqn, boolean: isPre</entry>
+                  <entry>@NodeLoaded</entry>
+               </row>
+               <row>
+                  <entry>org.jboss.cache.NodeModifed</entry>
+                  <entry>String: fqn, boolean: isPre, boolean: isOriginLocal</entry>
+                  <entry>@NodeModifed</entry>
+               </row>
+               <row>
+                  <entry>org.jboss.cache.NodeRemoved</entry>
+                  <entry>String: fqn, boolean: isPre, boolean: isOriginLocal</entry>
+                  <entry>@NodeRemoved</entry>
+               </row>
+               <row>
+                  <entry>org.jboss.cache.NodeVisited</entry>
+                  <entry>String: fqn, boolean: isPre</entry>
+                  <entry>@NodeVisited</entry>
+               </row>
+               <row>
+                  <entry>org.jboss.cache.ViewChanged</entry>
+                  <entry>String: view</entry>
+                  <entry>@ViewChanged</entry>
+               </row>
+               <row>
+                  <entry>org.jboss.cache.NodeActivated</entry>
+                  <entry>String: fqn</entry>
+                  <entry>@NodeActivated</entry>
+               </row>
+               <row>
+                  <entry>org.jboss.cache.NodeMoved</entry>
+                  <entry>String: fromFqn, String: toFqn, boolean: isPre</entry>
+                  <entry>@NodeMoved</entry>
+               </row>
+               <row>
+                  <entry>org.jboss.cache.NodePassivated</entry>
+                  <entry>String: fqn</entry>
+                  <entry>@NodePassivated</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+   </section>
+</chapter>

@@ -1,0 +1,1563 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+        "../../../../docbook-support/support/docbook-dtd/docbookx.dtd"
+        >
+<book lang="en">
+    <bookinfo>
+        <title>Frequently Asked Questions about JBoss Cache</title>
+        <!-- Release version and date -->
+        <releaseinfo>Release 3.1.0 Cascabel</releaseinfo>
+        <pubdate>April 2009</pubdate>
+
+        <author>
+            <firstname>Manik</firstname>
+            <surname>Surtani</surname>
+            <email>manik AT jboss DOT org</email>
+        </author>
+
+        <author>
+            <firstname>Ben</firstname>
+            <surname>Wang</surname>
+            <email>ben DOT wang AT jboss DOT com</email>
+        </author>
+
+        <author>
+            <firstname>Bela</firstname>
+            <surname>Ban</surname>
+            <email>bela AT jboss DOT com</email>
+        </author>
+
+        <author>
+            <firstname>Scott</firstname>
+            <surname>Marlow</surname>
+            <email>smarlow AT novell DOT com</email>
+        </author>
+
+        <author>
+            <firstname>Galder</firstname>
+            <surname>Zamarreño</surname>
+            <email>galder DOT zamarreno AT jboss DOT com</email>
+        </author>
+
+        <abstract>
+            <para>This is a compilation of the most frequently asked
+                questions about JBoss Cache. Please report any bugs,
+                inconsistencies, or omissions you find in this FAQ on the
+                <ulink url="http://www.jboss.org/jbosscache">JBoss Cache User Forum</ulink>.
+            </para>
+            <para>
+                This FAQ is divided into specific sections, all pertaining to the core JBoss Cache library. POJO Cache
+                has a
+                separate FAQ
+                document pertaining to POJO Cache specifics.
+            </para>
+        </abstract>
+
+        <!-- copyright info -->
+        <copyright>
+            <year>2005</year>
+            <year>2006</year>
+            <year>2007</year>
+            <year>2008</year>
+            <year>2009</year>
+            <holder>JBoss, a division of Red Hat Inc., and all authors as named.</holder>
+        </copyright>
+    </bookinfo>
+
+
+    <chapter id="general">
+        <title>General Information</title>
+        <qandaset>
+
+            <qandaentry>
+                <question>
+                    <para>What is JBoss Cache?</para>
+                </question>
+
+                <answer>
+                    <para>JBoss Cache is a replicated and transactional cache. It is
+                        replicated since multiple JBoss Cache instances can be distributed
+                        (either within the same JVM or across several JVMs whether they reside on
+                        the same machine or on different machines on a network) and data is
+                        replicated across the whole group. It is transactional because a
+                        user can configure a
+                        <ulink url="http://java.sun.com/products/jta/">JTA</ulink>
+                        compliant transaction
+                        manager and make any cache
+                        interaction transactional, and caches would participate in ongoing JTA transactions. Note that
+                        the cache can also be run without
+                        any replication; this is the local mode.
+                    </para>
+
+                    <para>JBoss Cache comes in two flavours: Core and POJO versions. The core library
+                        (using the
+                        <literal>org.jboss.cache.Cache</literal>
+                        interface) is the underlying library that organises data in a tree-like structure and handles
+                        all locking,
+                        passivation,
+                        eviction and replication characteristics of data in the cache. The POJO library (using the
+                        <literal>org.jboss.cache.pojo.PojoCache</literal>
+                        interface) is built atop the core library and allows introspection
+                        of objects in the cache providing transparent coherence by using JBoss AOP. Note that the POJO
+                        edition
+                        of JBoss Cache
+                        (often referred to as POJO Cache) comes with a separate set of documentation (Users' Guide, FAQ,
+                        etc.)
+                        available on the JBoss Cache
+                        <ulink url="http://www.jboss.org/jbosscache/">documentation website</ulink>.
+                    </para>
+
+                    <para>
+                        JBoss Cache is made available in one of four different packages:
+                        <itemizedlist>
+                            <listitem>
+                                <para>
+                                    <literal>jbosscache-core</literal>
+                                </para>
+                                contains the core Cache library for users who do not wish to use the additional
+                                functionality
+                                offered by POJO Cache.
+                            </listitem>
+                            <listitem>
+                                <para>
+                                    <literal>jbosscache-pojo</literal>
+                                </para>
+                                contains the core Cache library as well as POJO Cache extensions and dependencies.
+                            </listitem>
+                        </itemizedlist>
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Who are the JBoss Cache developers?</para>
+                </question>
+
+                <answer>
+                    <para>
+                        JBoss Cache has an active community of developers and contributors. The project was founded by
+                        Bela
+                        Ban
+                        and is currently led by Manik Surtani. Jason Greene is the lead for the POJO Cache subsystem,
+                        and other
+                        contributors both past and present include Ben Wang, Harald Gliebe, Brian Stansberry, Vladimir
+                        Blagojevic, Mircea Markus, Jimmy Wilson, Galder Zamarreño and Elias Ross.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>What about licensing?</para>
+                </question>
+
+                <answer>
+                    <para>JBoss Cache is licensed under
+                        <ulink url="http://www.gnu.org/licenses/lgpl.html">LGPL</ulink>, an<ulink
+                                url="http://www.opensource.org/">OSI</ulink>-approved open source license.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Where can I download JBoss Cache?</para>
+                </question>
+
+                <answer>
+                    <para>The JBoss Cache
+                        <ulink url="http://www.jboss.com/products/jbosscache/downloads">product download page</ulink>
+                        has prebuilt binaries as well as source distributions. You can also grab snapshots from the
+                        JBoss.org subversion
+                        repository. See
+                        <ulink url="http://www.jboss.org/community/docs/DOC-10259">the JBoss Cache development</ulink>
+                        wiki page for details.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>How do I build JBoss Cache from sources?</para>
+                </question>
+
+                <answer>
+                    <para>
+                        Read the README-Maven.txt file in the source root. Note that you will need a JDK >= 5.0, and
+                        Apache Maven >= 2.0.6.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Which versions of the JDK are supported by JBoss Cache?</para>
+                </question>
+
+                <answer>
+                    <para>
+                        JBoss Cache is baselined on Java 5 and is tested on Java 5 and 6 VMs. If, for whatever reason
+                        you have
+                        to use Java 1.4, you could build a retroweaved version of the core cache
+                        library that is Java 1.4 compatible, using the simple instructions on this wiki page
+                        <ulink url="http://www.jboss.org/community/docs/DOC-10263">on building and running JBoss Cache
+                            on Java 1.4.
+                        </ulink>.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>How do I know the version of JBoss Cache that I am using?</para>
+                </question>
+
+                <answer>
+                    <para>
+                        <literal>java -jar jbosscache-core.jar</literal>
+                        will spit out version details.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can I run JBoss Cache outside of JBoss Application
+                        Server?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>
+                        Absolutely! Even though JBoss Cache comes integrated with JBoss Application Server,
+                        it can also be used in any other Java EE server such as BEA WebLogic, IBM Websphere or Tomcat.
+                        It
+                        can also run in a standalone Java process, completely outside of an application server. See the
+                        Users' Guide for more
+                        details.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>How can I migrate my application and configuration from using JBoss Cache 1.x to 2.x?</para>
+                </question>
+                <answer>
+                    <para>Look at
+                        <ulink url="http://www.jboss.org/community/docs/DOC-10246">this wiki page</ulink>
+                        for help.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>What about from 2.x to 3.x?</para>
+                </question>
+                <answer>
+                    <para>
+                        JBoss Cache 3.x is API compatible with 2.x, although as far as possible you should refactor your
+                        code
+                        not to use deprecated methods as these may disappear in future releases of JBoss Cache.
+                    </para>
+                    <para>
+                        JBoss Cache 3.x comes with an all new configuration format. Old 2.x configuration files will
+                        still
+                        work, although you will get a warning in the logs about this. Again, as far as possible, we
+                        recommend
+                        migrating your configuration file to the new format. Scripts are provided with the JBoss Cache
+                        3.x
+                        distribution to migrate configuration files (see
+                        <literal>config2to3.sh</literal>
+                        and<literal>config2to3.bat</literal>).
+                    </para>
+                    <para>
+                        Note that to take advantage of some of the new features in JBoss Cache 3.x, you need to be using
+                        the
+                        new configuration format.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Where can I report bugs or problems?</para>
+                </question>
+
+                <answer>
+                    <para>Please report any bugs or problems to
+                        <ulink url="http://www.jboss.org/jbosscache">JBoss Cache User Forum</ulink>.
+                    </para>
+                </answer>
+            </qandaentry>
+        </qandaset>
+    </chapter>
+
+    <chapter id="TreeCache">
+        <title>JBoss Cache - Core</title>
+
+        <qandaset>
+
+            <qandaentry>
+                <question>
+                    <para>Using JBoss Cache 2 or 3 on JBoss AS 4.x</para>
+                </question>
+
+                <answer>
+                    <para>
+                        JBoss AS 4.x ships with JBoss Cache 1.4.x. To make use of new features, performance improvements
+                        and bug fixes in newer releases, you can follow some of the steps outlined on<ulink
+                            url="http://www.jboss.org/community/docs/DOC-10254">this wiki page</ulink>.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can I run multiple JBoss Cache instances on the same VM?</para>
+                </question>
+
+                <answer>
+                    <para>Yes. There are some scenarios where you may want to run
+                        multiple instances of JBoss Cache. For example, you want to run
+                        multiple local cache instances with each instance having its own
+                        configuration (e.g., different cache policy). In this case, you will
+                        need multiple xml configuration files.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can JBoss Cache run as a second level cache inside
+                        Hibernate?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Yes. Since Hibernate 3.0 release, you can configure it to use
+                        JBoss Cache as a second level cache. For details,
+                        see Hibernate documentation, and also see
+                        <ulink url="http://www.jboss.org/community/docs/DOC-10265">this wiki page</ulink>.
+                    </para>
+                    <para>
+                        JBoss Cache 3.x with MVCC in particular works very well as a Hibernate second level cache.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>What about using POJO Cache as a Hibernate cache?</para>
+                </question>
+
+                <answer>
+                    <para>It is not necessary to use POJO Cache for second level
+                        cache inside Hibernate because Hibernate
+                        manages fine-grained fields in Java objects. Using POJO Cache won't
+                        provide any advantage, and will be an unnecessary performance drawback.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>How can I configure JBoss Cache?</para>
+                </question>
+
+                <answer>
+                    <para>You can configure the JBoss Cache through a configuration xml
+                        file or programmatically using a
+                        <literal>org.jboss.cache.config.Configuration</literal>
+                        object, passed in to the
+                        <literal>org.jboss.cache.CacheFactory</literal>
+                        instance.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can I use a schema or DTD to validate my JBoss Cache configuration file?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>
+                        As of JBoss Cache 3.x, yes. An XSD schema is provided in your jbosscache-core.jar file, and is
+                        also
+                        available online, on<ulink url="http://www.jboss.org/jbosscache/jbosscache-config-3.0.xsd">
+                        http://www.jboss.org/jbosscache/jbosscache-config-3.0.xsd</ulink>.
+                        You can configure your IDE, text editor or XML authoring tool to use this schema to validate
+                        your file.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>What is the difference between the different cache modes?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>JBossCache has five different cache modes, i.e.,
+                        <literal>LOCAL</literal>
+                        ,
+                        <literal>REPL_SYNC</literal>
+                        ,
+                        <literal>REPL_ASYNC</literal>
+                        ,
+                        <literal>INVALIDATION_SYNC</literal>
+                        and
+                        <literal>INVALIDATION_ASYNC</literal>
+                        . If you want to run JBoss Cache as a
+                        single instance, then you should set the cache mode to
+                        <literal>LOCAL</literal>
+                        so that it won't attempt to replicate anything.
+                        If you want to have synchronous replication among different
+                        JBoss Cache instances, you set it to
+                        <literal>REPL_SYNC</literal>
+                        .
+                        For asynchronous replication, use
+                        <literal>AYSNC_REPL</literal>
+                        . If you do not wish to replicate cached data but simply inform other caches in a cluster that
+                        data
+                        under
+                        specific addresses are now stale and should be evicted from memory, use
+                        <literal>INVALIDATION_SYNC</literal>
+                        or
+                        <literal>INVALIDTAION_ASYNC</literal>
+                        . Synchronous and asynchronous behavior applies to invalidation as well as replication.
+                    </para>
+
+                    <para>Note that
+                        <literal>ASYNC_REPL</literal>
+                        and
+                        <literal>INVALIDATION_ASYNC</literal>
+                        are non-blocking. This
+                        can be useful when you want to have another JBoss Cache serving as a
+                        mirror or backup and you don't want to wait for confirmation that this mirror has received your
+                        messages.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>How does JBoss Cache's replication mechanism work?</para>
+                </question>
+
+                <answer>
+                    <para>JBoss Cache leverages
+                        <ulink url="http://www.jgroups.org">JGroups</ulink>
+                        for network communications. A JGroups configuration section is present in your JBoss Cache
+                        configuration.
+                    </para>
+                    <para>
+                        A user
+                        can configure the cluster of JBoss Cache instances by sharing the
+                        same cluster name (
+                        <literal>cluster name</literal>
+                        ). There is also
+                        an option of whether to populate the cache data upon starting a new
+                        instance in the
+                        <literal>ClusterConfig</literal>
+                        attribute.
+                    </para>
+
+                    <para>Note that once all instances join the same replication group,
+                        every replication change is propagated to all participating members.
+                        There is no mechanism for sub-partitioning where some replication
+                        can be done within only a subset of members, unless you use the Buddy Replication features. See
+                        the
+                        Users' Guide for more details on this.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>I run a 2 node cluster. If the network dies, do the caches continue to run?</para>
+                </question>
+
+                <answer>
+                    <para>Yes, both will continue to run, but depending on your replication mode, all transactions or
+                        operations may not complete. If
+                        <literal>REPL_SYNC</literal>
+                        is used, operations will fail while if
+                        <literal>REPL_ASYNC</literal>
+                        is used they will succeed. Even if they succeed though, caches will be out of sync.
+                    </para>
+                </answer>
+            </qandaentry>
+
+
+            <qandaentry>
+                <question>
+                    <para>Can I plug in library X instead of JGroups to handle remote calls and group communications?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>At this stage the answer is no. We do have an abstraction layer between the
+                        communication suite and JBoss Cache in the pipelines, and this may appear as a feature at some
+                        stage
+                        in
+                        the future.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Does the cache need to replicate to every other instance in the cluster? Isn't this slow if
+                        the
+                        cluster is large?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Replication need not occur to every node in the cluster. This feature -
+                        called Buddy Replication -
+                        allows each node to pick one or more 'buddies' in the cluster and only replicate to its buddies.
+                        This
+                        allows a cluster to scale
+                        very easily with no extra impact on memory or network traffic with each node added.
+                    </para>
+                    <para>
+                        See the Users' Guide for more information on Buddy Replication, and how it can be used to
+                        achieve very
+                        high
+                        scalability.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>I'm using Buddy Replication. Do I need to have some form of session affinity?</para>
+                </question>
+                <answer>
+                    <para>Session affinity relates to returning to the same cache instance for the same data being used.
+                        While this is strictly not a requirement for Buddy Replication, it is greatly recommended to
+                        minimize
+                        moving state around a cluster.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>If I have the need for different configuration properties (e.g.,
+                        <literal>CacheMode</literal>
+                        and
+                        <literal>IsolationLevel</literal>
+                        ), do I simply need to create multiple
+                        <literal>org.jboss.cache.Cache</literal>
+                        instances with the appropriate configuration?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Yes. All the above mentioned properties are per cache
+                        instance. Therefore you will need separate
+                        <literal>org.jboss.cache.Cache</literal>
+                        instances.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Isn't this expensive from a networking standpoint, i.e., needing to create sockets for each
+                        <literal>org.jboss.cache.Cache</literal>
+                        instance?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>
+                        Yes, it can be. For such cases it is recommended that you configure your cache using the JGroups
+                        Multiplexer, which allows several caches to share
+                        a single JGroups channel. Please see the Users' Guide for details on how to configure the
+                        JGroups
+                        Multiplexer.
+                    </para>
+                    <para>
+                        A faster and more efficient approach is to use a shared transport in JGroups. Please see
+                        <ulink url="http://www.jgroups.org">the JGroups documentation</ulink>
+                        for more details on how to do this.
+                    </para>
+                </answer>
+            </qandaentry>
+
+
+            <qandaentry>
+                <question>
+                    <para>Does the
+                        <literal>ClusterName</literal>
+                        configuration element have
+                        any relation to the JBoss AS cluster
+                        <literal>PartitionName</literal>
+                        ?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Yes. They are both JGroups group names. Besides the notion of
+                        a channel in JGroups, it also can partition the channel into different
+                        group names.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>When using multiple JGroups based components
+                        [cluster-service.xml, cache (multiple instances)], what is the
+                        correct/valid way to configure those components to make sure my
+                        multicast addresses don't conflict?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>There are two parameters to consider: multicast address (plus
+                        port) and the group name. At minimum, you will have to run
+                        components using a different group name. But whether to run them on
+                        the same channel depends upon whether the communication performance
+                        is critical for you or not. If it is, then it'd be best to run them
+                        on different channels.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Does JBoss Cache support cache persistence
+                        storage?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Yes. JBoss Cache has a cache loader
+                        interface that supports cache persistence. See below for more FAQs on cache loaders.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Does JBoss Cache support cache passivation/ overflow
+                        to a data store?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Yes. JBoss Cache uses the
+                        cache loader to support cache passivation/ overflow. See
+                        documentation on how to configure and use this feature.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Is JBoss Cache thread safe?</para>
+                </question>
+
+                <answer>
+                    <para>Yes, it is thread safe.</para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Does JBoss Cache support XA (2PC) transactions now?</para>
+                </question>
+
+                <answer>
+                    <para>No, although it is also on our to do list. Our internal
+                        implementation does use a procedure similar to 2PC to coordinate a
+                        transactions among different instances, but JBoss Cache is not an XA resource.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Which transaction managers are supported by
+                        JBoss Cache?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>JBoss Cache supports any TransactionManager that is
+                        <ulink url="http://java.sun.com/products/jta/">JTA</ulink>
+                        compliant such as<ulink url="http://www.jboss.org/jbosstm/">JBoss Transactions</ulink>.
+                    </para>
+                    <para>
+                        While JBoss Cache does ships with a
+                        dummy transaction manager
+                        (<literal>org.jboss.cache.transaction.DummyTransactionManager</literal>), we do
+                        <emphasis>not</emphasis>
+                        recommend using this for production. It is not thread safe, and is intended for internal testing
+                        only.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>How do I set up the cache to be transactional?</para>
+                </question>
+
+                <answer>
+                    <para>You either use the default transaction manager that ships with JBoss AS
+                        or you have to implement the
+                        <literal>org.jboss.cache.transaction.TransactionManagerLookup</literal>
+                        interface, and return an
+                        instance of your
+                        <literal>javax.transaction.TransactionManager</literal>
+                        implementation. The
+                        configuration property
+                        <literal>TransactionManagerLookupClass</literal>
+                        defines the class
+                        to be used by the cache to fetch a reference to a
+                        transaction manager. It is trivial to implement this interface to support
+                        other transaction managers. Once this attribute is specified, the
+                        cache will look up the transaction context from this transaction
+                        manager.
+                    </para>
+                    <para>
+                        The
+                        <literal>org.jboss.cache.transaction.GenericTransactionManagerLookup</literal>
+                        class that ships
+                        with JBoss Cache is able to detect and bind to most popular transaction managers. See the
+                        <literal>GenericTransactionManagerLookup</literal>
+                        javadocs for more information.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>How do I control the cache locking level?</para>
+                </question>
+
+                <answer>
+                    <para>JBoss Cache lets you control the cache locking level through
+                        the transaction isolation level. This is configured through the
+                        attribute
+                        <literal>IsolationLevel</literal>
+                        . The transaction
+                        isolation levels correspond to database
+                        isolation levels, namely,
+                        <literal>NONE</literal>
+                        ,
+                        <literal>READ_UNCOMMITTED</literal>
+                        ,
+                        <literal>READ_COMMITTED</literal>
+                        ,
+                        <literal>REPEATABLE_READ</literal>
+                        , and
+                        <literal>SERIALIZABLE</literal>
+                        . Note that these isolation levels are ignored if optimistic locking is used. For details,
+                        please
+                        refer
+                        to the
+                        user manual.
+                    </para>
+                    <para>
+                        As of JBoss Cache 3.x, when using the MVCC locking scheme, only
+                        <literal>READ_COMMITTED</literal>
+                        and
+                        <literal>REPEATABLE_READ</literal>
+                        are supported. Any other isolation level provided will either be upgraded
+                        or downgraded accordingly.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>How does JBoss Cache lock data for concurrent access?</para>
+                </question>
+
+                <answer>
+                    <para>In JBoss Cache 2.x, by default pessimistic locking is used to lock data nodes, based on the
+                        isolation level
+                        configured. We also offer optimistic locking to allow for greater concurrency
+                        at
+                        the cost of slight processing overhead and performance. See the documentation for a more
+                        detailed
+                        discussion on concurrency and locking in JBoss Cache.
+                    </para>
+                    <para>
+                        In JBoss Cache 3.x, optimistic and pessimistic locking are deprecated in favour of MVCC
+                        (multi-version concurrency
+                        control), which is far more efficient than either optimistic or pessimistic locking. For a
+                        detailed discussion on
+                        our MVCC implementation, see
+                        <ulink url="http://jbosscache.blogspot.com/2008/07/mvcc-has-landed.html">this blog entry</ulink>
+                        and<ulink url="http://www.jboss.org/community/docs/DOC-10272">this wiki page</ulink>.
+                    </para>
+                </answer>
+            </qandaentry>
+
+
+            <qandaentry>
+                <question>
+                    <para>How do I enable Optimistic Locking or MVCC in JBoss Cache?</para>
+                </question>
+
+                <answer>
+                    <para>
+                        Please see the configuration section of the Users' Guide for details.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can I use the cache locking level even without a transaction
+                        context?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Yes. JBoss Cache controls the individual node locking behavior
+                        through the isolation level semantics. This means even if you don't
+                        use a transaction, you can specify the lock level via isolation
+                        level. You can think of the node locking behavior outside of a
+                        transaction as if it is under transaction with
+                        <literal>auto_commit</literal>
+                        on.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>
+                        Does JBoss Cache support
+                        <literal>SELECT FOR UPDATE</literal>
+                        semantics?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>
+                        Yes, but this is is only possible if you are running within a JTA transaction
+                        <emphasis>and</emphasis>
+                        are using either
+                        <literal>MVCC</literal>
+                        or
+                        <literal>PESSIMISTIC</literal>
+                        as your node locking scheme.
+                    </para>
+                    <para>
+                        To achieve
+                        <literal>SELECT FOR UPDATE</literal>
+                        semantics, simply do:
+                    </para>
+                    <programlisting role="JAVA"><![CDATA[
+
+    // start transaction ... 
+
+    cache.getInvocationContext().getOptionOverrides().setForceWriteLock(true);
+    Node n = cache.get("/a/b/c"); // this acquires a WRITE LOCK on this node
+        ...
+        ...
+
+    // end transaction
+
+                    ]]></programlisting>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>With replication (REPL_SYNC/REPL_ASYNC) or invalidation
+                        (INVALIDATION_SYNC/INVALIDATION_ASYNC), how
+                        often does the cache broadcast messages over the network?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>If the updates are under transaction, then the broadcasts
+                        happen only when the transaction is about to commit (actually
+                        during the prepare stage internally). That is, it will be a batch
+                        update. However, if the operations are not under transaction
+                        context, then each update will trigger replication. Note that this
+                        has performance implications if network latency is a problem.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>How can I do a mass removal?</para>
+                </question>
+
+                <answer>
+                    <para>If you do a<literal>cache.removeNode("/myroot")</literal>, it will recursively remove
+                        all the entries under "/myroot".
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can I monitor and manage the JBoss Cache?</para>
+                </question>
+
+                <answer>
+                    <para>Yes, using a JMX console such as the one shipped with JBoss AS or Java 5's
+                        <literal>jconsole</literal>
+                        utility. See the chapter titled
+                        <emphasis role="bold">Management Information</emphasis>
+                        in the JBoss Cache Users' Guide for more details.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>
+                        JBoss Cache uses a
+                        <literal>:</literal>
+                        character in its object name. This causes problems with
+                        my MBean server. What can I do about it?
+                    </para>
+                </question>
+                <answer>
+                    <para>
+                        This is something we have seen with some MBean servers. By default, JBoss Cache uses
+                        <literal>jboss.cache:service=JBossCache</literal>
+                        as a prefix to all objects it binds in JMX.
+                        To work around this, use the
+                        <literal>-Djbosscache.jmx.prefix</literal>
+                        JVM parameter to pass in
+                        an alternate prefix.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can I disable JBoss Cache management attributes?</para>
+                </question>
+
+                <answer>
+                    <para>Yes, you can. See the section on configuration in the JBoss Cache Users' Guide.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>What happened to jboss-serialization.jar?</para>
+                </question>
+
+                <answer>
+                    <para>
+                        As of JBoss Cache 2.0.0, the dependency on JBoss Serialization has been dropped since most of
+                        the
+                        benefits of JBoss Serialization are available in updated Java 5 VMs. Since JBoss Cache 2.0.0 is
+                        baselined on Java 5, there was no need to provide these benefits separately.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Does JBoss Cache support partitioning?</para>
+                </question>
+
+                <answer>
+                    <para>Not right now. JBoss Cache does not support partitioning that a
+                        user can configure to have different set of data residing on
+                        different cache instances while still participating as a replication
+                        group.
+                    </para>
+                    <para>
+                        This is on the roadmap though, so do keep an eye on
+                        <ulink url="http://jira.jboss.org/jira/browse/JBCACHE-60">JBCACHE-60</ulink>
+                        if you are interested.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Does JBoss Cache handle the concept of application classloading
+                        inside, say, a Java EE container?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Application-specific classloading is used widely inside a Java EE
+                        container. For example, a web application may require a new
+                        classloader to scope a specific version of the user library.
+                        However, by default JBoss Cache is agnostic to the classloader. In
+                        general, this leads to two kinds of problems:
+                    </para>
+
+                    <itemizedlist>
+                        <listitem>
+                            <para>Object instance is stored in cache1 and replicated to
+                                cache2. As a result, the instance in cache2 is created by the
+                                system classloader. The replication may fail if the system
+                                classloader on cache2 does not have access to the required
+                                class. Even if replication doesn't fail, a user thread in cache2
+                                may not be able to access the object if the user thread is
+                                expecting a type defined by the application classloader.
+                            </para>
+                        </listitem>
+
+                        <listitem>
+                            <para>Object instance is created by thread 1 and will be
+                                accessed by thread 2 (with two different classloaders).
+                                JBoss Cache has no notion of the different classloaders involved.
+                                As a result, you will have a
+                                <literal>ClassCastException</literal>
+                                . This is a standard
+                                problem in passing an object from one application space to
+                                another; JBoss Cache just adds a level of indirection in passing
+                                the object.
+                            </para>
+                        </listitem>
+                    </itemizedlist>
+
+                    <para>To solve the first kind of issue JBoss Cache uses a
+                        <literal>CacheMarshaller</literal>
+                        .
+                        Basically, this allows application code to register a classloader
+                        with a portion of the cache tree for use in handling objects
+                        replicated to that portion. See the
+                        <literal>CacheMarshaller</literal>
+                        section of
+                        the Users' Guide for more details.
+                    </para>
+
+                    <para>To solve the second kind of issue, you can use the the
+                        <literal>UseLazyDeserialization</literal>
+                        configuration
+                        option in JBoss Cache, which wraps your objects in a
+                        <literal>Marshalledvalue</literal>
+                        wrapper. The
+                        <literal>MarshalledValue</literal>
+                        serializes and deserializes your object on demand, ensuring the proper thread local context
+                        class loader is used each time.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Does JBoss Cache currently support pre-event and post-event
+                        notification?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Yes. A boolean is passed in to each notification callback identifying whether the callback is
+                        before
+                        or after the event. See the
+                        <literal>org.jboss.cache.notifications.annotations.CacheListener</literal>
+                        annotation for details.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>How do I implement a custom listener to listen to
+                        cache events?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>
+                        See the Users' Guide on this subject.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can I use
+                        <literal>UseRegionBasedMarshalling</literal>
+                        attribute in JBoss Cache in order to get
+                        around ClassCastExceptions happening when accessing data in the cache that has just been
+                        redeployed?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Yes, you can. Originally, cache Marshalling was designed as a
+                        workaround for those replicated caches that upon state transfer did not have access to the
+                        classloaders defining the objects in the cache.
+                    </para>
+
+                    <para>On each deployment, JBoss creates a new classloader per the top level deployment artifact, for
+                        example an EAR. You also have to bear in mind that a class in an application server is defined
+                        not
+                        only by the class name but also its classloader. So, assuming that the cache is not deployed as
+                        part
+                        of your deployment, you could deploy an application and put instances of classes belonging to
+                        this
+                        deployment inside the cache. If you did a redeployment and try to do a get operation of the data
+                        previously put, this would result on a ClassCastException. This is because even though the class
+                        names
+                        are the same, the class definitions are not. The current classloader is different to the one
+                        when
+                        the classes were originally put.
+                    </para>
+
+                    <para>By enabling marshalling, you can control the lifecycle of the data in the cache and if on
+                        undeployment, you deactivate the region and unregister the classloader that you'd have
+                        registered on
+                        deployment, you'd evict the data in the cache locally. That means that in the next deployment,
+                        the
+                        data won't be in the cache, therefore avoiding the problem. Obviously, using marshalling to get
+                        around this problem is only recommended when you have some kind of persistence backing where the
+                        data
+                        survives, for example using CacheLoaders, or when JBoss Cache is used as a second level cache in
+                        a
+                        persistence framework.
+                    </para>
+
+                    <para>To implement this feature, please follow the instructions indicated in the example located
+                        in the CacheMarshaller section of the Users' Guide. It's worth noting that instead of a
+                        <literal>ServletContextListener</literal>
+                        , you could add this code into an
+                        <literal>MBean</literal>
+                        that contained lifecycle methods, such as
+                        <literal>start()</literal>
+                        and
+                        <literal>stop()</literal>
+                        .
+                        The key would be for this MBean to depend on the target cache, so that it can operate as long as
+                        the
+                        cache is up and running.
+                    </para>
+                </answer>
+            </qandaentry>
+
+        </qandaset>
+    </chapter>
+
+    <chapter id="eviction">
+        <title>Eviction Policies</title>
+        <qandaset>
+            <qandaentry>
+                <question>
+                    <para>Does JBoss Cache support eviction policies?</para>
+                </question>
+
+                <answer>
+                    <para>Yes. JBoss Cache currently supports multiple eviction policies such as LRU, MRU, and FIFO.
+                        Users can also plug in their own eviction policy algorithms. See user
+                        guide for details.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Does JBoss Cache's eviction policy operates in
+                        replication mode?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Yes and no. :-)</para>
+
+                    <para>The eviction policy only operates in local mode. That is, nodes are
+                        only evicted locally. This may cause the cache contents not to be
+                        synchronized temporarily. But when a user tries to obtain the cached
+                        contents of an evicted node and finds out that is null (e.g.,
+                        <literal>get</literal>
+                        returns null), it should get it from the
+                        other data source and re-populate the data in the cache. During this
+                        moment, the node content will be propagated and the cache content
+                        will be in sync.
+                    </para>
+
+                    <para>However, you still can run eviction policies with cache mode
+                        set to either
+                        <literal>REPL_SYNC</literal>
+                        or
+                        <literal>REPL_ASYNC</literal>
+                        . Depending on your use case, you can
+                        set multiple cache instances to have their own eviction policy
+                        (which are applied locally) or just have selected instances with
+                        eviction policies activated.
+                    </para>
+
+                    <para>Also note that, with cache loader option, a locally evicted
+                        node can also be persisted to the backend store and a user can
+                        retrieve it from the store later on.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Does JBoss Cache support
+                        <literal>Region</literal>
+                        ?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Yes. JBoss Cache has the notion of region where a user can
+                        configure the eviction policy parameters (e.g.,
+                        <literal>maxNodes</literal>
+                        or
+                        <literal>timeToIdleSeconds</literal>
+                        )
+                    </para>
+
+                    <para>A region in JBoss Cache denotes a portion of tree hierarchy,
+                        e.g., a fully qualified name (
+                        <literal>org.jboss.cache.Fqn</literal>
+                        ). For example,
+                        a user can define
+                        <literal>/org/jboss</literal>
+                        and
+                        <literal>/org/foocom</literal>
+                        as two separate regions. But note
+                        that you can configure the region programmatically now, i.e.,
+                        everything has to be configured through the xml file.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>I have turned on the eviction policy, why do I still get "out
+                        of memory" (OOM) exception?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>OOM can happen when the speed of cache access exceeds the
+                        speed of eviction policy handling timer. Eviction policy handler
+                        will wake up every
+                        <literal>wakeUpInterval</literal>
+                        milliseconds (or
+                        <literal>wakeUpIntervalSeconds</literal>
+                        seconds, prior to 3.x)
+                        to process the eviction event queue. So when the queue size is full, it will create a
+                        backlog and cause out-of-memory exceptions to happen unless the eviction timer catches
+                        up. To address this problem, in addition to increase the VM heap
+                        size, you can also reduce the
+                        <literal>wakeUpInterval</literal>
+                        so the timer thread
+                        processes the queue more frequently.
+                    </para>
+                </answer>
+            </qandaentry>
+        </qandaset>
+    </chapter>
+    <chapter id="cacheloaders">
+        <title>Cache Loaders</title>
+        <qandaset>
+
+
+            <qandaentry>
+                <question>
+                    <para>What is a cache loader?</para>
+                </question>
+
+                <answer>
+                    <para>A cache loader is the connection of JBoss Cache to a
+                        (persistent) data store. The cache loader is called by JBoss Cache to
+                        fetch data from a store when that data is not in the cache, and when
+                        modifications are made to data in the cache the Cache Loader is
+                        called to store those modifications back to the store.
+                    </para>
+
+                    <para>In conjunction with eviction policies, JBoss Cache with a
+                        cache loader allows a user to maintain a bounded cache for a large
+                        backend datastore. Frequently used data is fetched from the
+                        datastore into the cache, and the least used data is evicted, in
+                        order to provide fast access to frequently accessed data. This is
+                        all configured through XML, and the programmer doesn't have to take
+                        care of loading and eviction.
+                    </para>
+
+                    <para>JBoss Cache currently ships with several cache loader
+                        implementations, including:
+                    </para>
+
+                    <para>
+                        <itemizedlist>
+                            <listitem>
+                                <para>
+                                    <literal>org.jboss.cache.loader.FileCacheLoader</literal>
+                                    : this implementation uses the file
+                                    system to store and retrieve data. JBoss Cache nodes are mapped
+                                    to directories, subnodes to subdirectories etc. Attributes of
+                                    a node are mapped to a data file
+                                    inside the
+                                    directory.
+                                </para>
+                            </listitem>
+
+                            <listitem>
+                                <para>
+                                    <literal>org.jboss.cache.loader.jdbm.JdbmCacheLoader</literal>
+                                    : this implementation is based on<ulink url="http://jdbm.sourceforge.net/">
+                                    JDBM</ulink>,
+                                    an open source file-based transactional persistence engine.
+                                </para>
+                            </listitem>
+
+                            <listitem>
+                                <para>
+                                    <literal>org.jboss.cache.loader.bdbje.BdbjeCacheLoader</literal>
+                                    : this implementation is based on the
+                                    Oracle's Berkeley DB Java Edition database, a fast and efficient
+                                    transactional database. It uses a single file for the entire
+                                    store. Note that if you use the Berkeley DB cache loader with
+                                    JBoss Cache and wish to ship your product, you will have to acquire a
+                                    <ulink url="http://www.sleepycat.com/jeforjbosscache">commercial license from
+                                        Oracle</ulink>.
+                                </para>
+                            </listitem>
+
+                            <listitem>
+                                <para>
+                                    <literal>org.jboss.cache.loader.JDBCCacheLoader</literal>
+                                    : this implementation uses the relational database as the persistent
+                                    storage.
+                                </para>
+                            </listitem>
+
+                            <listitem>
+                                <para>And more. See the chapter on cache loaders in the Users' Guide for more details.
+                                </para>
+                            </listitem>
+                        </itemizedlist>
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Is the FileCacheLoader recommended for production use?</para>
+                </question>
+
+                <answer>
+                    <para>
+                        No, it is not. The FileCacheLoader has some severe limitations which restrict its use in a
+                        production
+                        environment, or if used in such an environment, it should be used with due care and sufficient
+                        understanding of these limitations.
+                        <itemizedlist>
+                            <listitem>Due to the way the FileCacheLoader represents a tree structure on disk
+                                (directories and
+                                files) traversal is inefficient for deep trees.
+                            </listitem>
+                            <listitem>Usage on shared filesystems like NFS, Windows shares, etc. should be avoided as
+                                these do
+                                not implement proper file locking and can cause data corruption.
+                            </listitem>
+                            <listitem>Usage with an isolation level of NONE can cause corrupt writes as multiple threads
+                                attempt to write to the same file.
+                            </listitem>
+                            <listitem>File systems are inherently not transactional, so when attempting to use your
+                                cache in a
+                                transactional context, failures when writing to the file (which happens during the
+                                commit phase)
+                                cannot be recovered.
+                            </listitem>
+                        </itemizedlist>
+
+                        As a rule of thumb, it is recommended that the FileCacheLoader not be used in a highly
+                        concurrent,
+                        transactional or stressful environment, and its use is restricted to testing.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can writing to cache loaders be asynchronous?</para>
+                </question>
+
+                <answer>
+                    <para>Yes. Set the
+                        <literal>async</literal>
+                        attrobute to true. See the JBoss Cache Users' Guide for a more
+                        detailed discussion. By default though, all cache loader writes are
+                        synchronous and will block.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can I write my own cache loader ?</para>
+                </question>
+
+                <answer>
+                    <para>Yes. A cache loader is a class implementing
+                        <literal>org.jboss.cache.loader.CacheLoader</literal>
+                        or extending
+                        <literal>org.jboss.cache.loader.AbstractCacheLoader</literal>
+                        . It is
+                        configured via the XML file (see JBoss Cache Users' Guide).
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Does a cache loader have to use a persistent store ?</para>
+                </question>
+
+                <answer>
+                    <para>No, a cache loader could for example fetch (and possibly store)
+                        its data from a webdav-capable webserver. Another example is a
+                        caching proxy server, which fetches contents from the web. Note that
+                        an implementation of CacheLoader may not implement the 'store'
+                        functionality in this case, but just the 'load'
+                        functionality.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Do I have to pay to use Oracle's Berkeley DB CacheLoader?</para>
+                </question>
+
+                <answer>
+                    <para>Not if you use it only for personal use. As soon as you
+                        distribute your product with BdbjeCacheLoader, you have to purchase
+                        a commercial license from Oracle. See details at
+                        <ulink
+                                url="http://www.sleepycat.com/jeforjbosscache">http://www.sleepycat.com/jeforjbosscache
+                        </ulink>
+                        .
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Are there any tools available to monitor the Berkeley DB instance?</para>
+                </question>
+
+                <answer>
+                    <para>
+                        Yes. Oracle ships a JMX-based monitoring tool, called
+                        <ulink
+                                url="http://www.oracle.com/technology/documentation/berkeley-db/je/java/com/sleepycat/je/jmx/JEMonitor.html">
+                            JEMonitor
+                        </ulink>
+                        which can be downloaded from the Oracle website.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>When tuning my Berkeley DB instance, where should I put my je.properties file?</para>
+                </question>
+
+                <answer>
+                    <para>
+                        <literal>je.properties</literal>
+                        should reside in your Berkeley DB home directory. This is the directory you pass
+                        in to the BDBJECacheLoader's
+                        <literal>location</literal>
+                        configuration property.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can I use more than one cache loader?</para>
+                </question>
+
+                <answer>
+                    <para>Yes. Within the CacheLoaderConfiguration XML
+                        element (see Users' Guide chapter on cache loaders) you can
+                        describe several cache loaders. The impact is that the cache will
+                        look at all of the cache loaders in the order they've been
+                        configured, until it finds a valid, non-null element of data. When
+                        performing writes, all cache loaders are written to (except if the
+                        ignoreModifications element has been set to true for a specific
+                        cache loader.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>Can I migrate a JDBCacheLoader or FileCacheLoader based cache store containing data formatted
+                        with
+                        JBoss Cache 1.x.x to JBoss Cache 2.0 format?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>Yes. See "Transforming Cache Loaders" section within the "Cache Loaders" section located in
+                        the
+                        JBoss Cache Users' Guide.
+                    </para>
+                </answer>
+            </qandaentry>
+
+            <qandaentry>
+                <question>
+                    <para>
+                        Is the TCPDelegatingCacheLoader resilient to TCPCacheServer restarts?
+                    </para>
+                </question>
+
+                <answer>
+                    <para>
+                        As of JBoss Cache 2.1.0, the answer is yes. See the Users' Guide for details on how to configure
+                        and
+                        tune
+                        your retries and wait period for reestablishing the TCP connection.
+                    </para>
+                    <para>
+                        Prior to that, restarting the TCPCacheServer would also mean
+                        restarting your application that uses the cache.
+                    </para>
+                </answer>
+            </qandaentry>
+
+        </qandaset>
+    </chapter>
+    <chapter id="troubleshooting">
+        <title>Troubleshooting</title>
+        <qandaset>
+
+            <qandaentry>
+                <question>
+                    <para>I am having problems getting JBoss Cache to work, where can I get information on
+                        troubleshooting?
+                    </para>
+                </question>
+                <answer>
+                    <para>Troubleshooting section can be found in the following
+                        <ulink url="http://www.jboss.org/community/docs/DOC-10288">wiki link</ulink>
+                        .
+                    </para>
+                </answer>
+            </qandaentry>
+        </qandaset>
+    </chapter>
+</book>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jbosscache  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns="urn:jboss:jbosscache-core:config:3.1">
+
+   <locking isolationLevel="REPEATABLE_READ" lockAcquisitionTimeout="15000"/>
+   <transaction transactionManagerLookupClass="org.jboss.cache.transaction.GenericTransactionManagerLookup"/>
+   <eviction wakeUpInterval="1000">
+      <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm" eventQueueSize="200000">
+         <property name="maxNodes" value="5000" />
+         <property name="timeToLive" value="1000" />
+      </default>
+      <region name="/org/jboss/test/data">
+         <property name="maxNodes" value="100" />
+         <property name="timeToLive" value="1000" />
+      </region>
+   </eviction>
+   <loaders passivation="true" shared="false">
+      <preload>
+         <node fqn="/"/>
+      </preload>
+      <loader class="org.jboss.cache.loader.FileCacheLoader" async="false" fetchPersistentState="true"
+              ignoreModifications="false">
+         <properties>
+         </properties>
+      </loader>
+   </loaders>
+</jbosscache>

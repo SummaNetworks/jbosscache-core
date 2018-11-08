@@ -1,0 +1,3403 @@
+<chapter id="configuration_reference_chapter">
+   <title>Configuration References</title>
+   <section id="sample_xml_file">
+      <title>Sample XML Configuration File</title>
+      <para>
+         This is what a typical XML configuration file looks like. It is recommended that you use one of the
+         configurations shipped with the JBoss Cache distribution and tweak according to your needs rather than write
+         one from scratch.
+      </para>
+      <programlisting role="XML"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+
+<jbosscache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:jboss:jbosscache-core:config:3.1">
+
+
+   <!--
+      isolation levels supported: READ_COMMITTED and REPEATABLE_READ
+      nodeLockingSchemes: mvcc, pessimistic (deprecated), optimistic (deprecated)
+   -->
+   <locking
+         isolationLevel="REPEATABLE_READ"
+         lockParentForChildInsertRemove="false"
+         lockAcquisitionTimeout="20000"
+         nodeLockingScheme="mvcc"
+         writeSkewCheck="false"
+         useLockStriping="true"
+         concurrencyLevel="500"/>
+
+   <!--
+      Used to register a transaction manager and participate in ongoing transactions.
+      -->
+   <transaction
+         transactionManagerLookupClass="org.jboss.cache.transaction.GenericTransactionManagerLookup"
+         syncRollbackPhase="false"
+         syncCommitPhase="false"/>
+
+   <!--
+      Used to register JMX statistics in any available MBean server
+      -->
+   <jmxStatistics
+         enabled="false"/>
+
+   <!--
+      If region based marshalling is used, defines whether new regions are inactive on startup.
+   -->
+   <startup
+         regionsInactiveOnStartup="true"/>
+
+   <!--
+      Used to register JVM shutdown hooks.
+      hookBehavior: DEFAULT, REGISTER, DONT_REGISTER
+   -->
+   <shutdown
+         hookBehavior="DEFAULT"/>
+
+   <!--
+      Used to define async listener notification thread pool size
+   -->
+   <listeners
+         asyncPoolSize="1"
+         asyncQueueSize="100000"/>
+
+   <!--
+      Used to enable invocation batching and allow the use of Cache.startBatch()/endBatch() methods.
+   -->
+   <invocationBatching
+         enabled="false"/>
+
+   <!--
+      serialization related configuration, used for replication and cache loading
+   -->
+   <serialization
+         objectInputStreamPoolSize="12"
+         objectOutputStreamPoolSize="14"
+         version="3.0.0"
+         marshallerClass="org.jboss.cache.marshall.VersionAwareMarshaller"
+         useLazyDeserialization="false"
+         useRegionBasedMarshalling="false"/>
+
+   <!--
+      This element specifies that the cache is clustered.
+      modes supported: replication (r) or invalidation (i).
+   -->
+   <clustering mode="replication" clusterName="JBossCache-cluster">
+
+      <!--
+         Defines whether to retrieve state on startup
+      -->
+      <stateRetrieval timeout="20000" fetchInMemoryState="false"/>
+
+      <!--
+         Network calls are synchronous.
+      -->
+      <sync replTimeout="20000"/>
+      <!--
+         Uncomment this for async replication.
+      -->
+      <!--<async useReplQueue="true" replQueueInterval="10000" replQueueMaxElements="500" serializationExecutorPoolSize="20" serializationExecutorQueueSize="5000000"/>-->
+
+      <!-- Uncomment to use Buddy Replication -->
+      <!--
+      <buddy enabled="true" poolName="myBuddyPoolReplicationGroup" communicationTimeout="2000">
+         <dataGravitation auto="true" removeOnFind="true" searchBackupTrees="true"/>
+         <locator class="org.jboss.cache.buddyreplication.NextMemberBuddyLocator">
+            <properties>
+               numBuddies = 1
+               ignoreColocatedBuddies = true
+            </properties>
+         </locator>
+      </buddy>
+      -->
+
+      <!--
+         Configures the JGroups channel.  Looks up a JGroups config file on the classpath or filesystem.  udp.xml
+         ships with jgroups.jar and will be picked up by the class loader.
+      -->
+      <jgroupsConfig configFile="udp.xml">
+         <!-- uncomment to define a JGroups stack here
+
+         <PING timeout="2000" num_initial_members="3"/>
+         <MERGE2 max_interval="30000" min_interval="10000"/>
+         <FD_SOCK/>
+         <FD timeout="10000" max_tries="5" shun="true"/>
+         <VERIFY_SUSPECT timeout="1500"/>
+         <pbcast.NAKACK use_mcast_xmit="false" gc_lag="0"
+                        retransmit_timeout="300,600,1200,2400,4800"
+                        discard_delivered_msgs="true"/>
+         <UNICAST timeout="300,600,1200,2400,3600"/>
+         <pbcast.STABLE stability_delay="1000" desired_avg_gossip="50000"
+                        max_bytes="400000"/>
+         <pbcast.GMS print_local_addr="true" join_timeout="5000" shun="false"
+                     view_bundling="true" view_ack_collection_timeout="5000"/>
+         <FRAG2 frag_size="60000"/>
+         <pbcast.STREAMING_STATE_TRANSFER use_reading_thread="true"/>
+         <pbcast.FLUSH timeout="0"/>
+          -->
+      </jgroupsConfig>
+   </clustering>
+
+   <!--
+      Eviction configuration.  WakeupInterval defines how often the eviction thread runs, in milliseconds.  0 means
+      the eviction thread will never run.
+   -->
+   <eviction wakeUpInterval="500">
+      <default algorithmClass="org.jboss.cache.eviction.LRUAlgorithm" eventQueueSize="200000">
+         <property name="maxNodes" value="5000" />
+         <property name="timeToLive" value="1000" />
+      </default>
+      <region name="/org/jboss/data1">
+         <property name="timeToLive" value="2000" />
+      </region>
+      <region name="/org/jboss/data2" algorithmClass="org.jboss.cache.eviction.FIFOAlgorithm" eventQueueSize="100000">
+         <property name="maxNodes" value="3000" />
+         <property name="minTimeToLive" value="4000" />
+      </region>
+   </eviction>
+
+   <!--
+      Cache loaders.
+
+      If passivation is enabled, state is offloaded to the cache loaders ONLY when evicted.  Similarly, when the state
+      is accessed again, it is removed from the cache loader and loaded into memory.
+
+      Otherwise, state is always maintained in the cache loader as well as in memory.
+
+      Set 'shared' to true if all instances in the cluster use the same cache loader instance, e.g., are talking to the
+      same database.
+   -->
+   <loaders passivation="false" shared="false">
+      <preload>
+         <node fqn="/org/jboss"/>
+         <node fqn="/org/tempdata"/>
+      </preload>
+
+      <!--
+         we can have multiple cache loaders, which get chained
+      -->
+      <loader class="org.jboss.cache.loader.JDBCCacheLoader" async="true" fetchPersistentState="true"
+              ignoreModifications="true" purgeOnStartup="true">
+         <properties>
+            cache.jdbc.table.name=jbosscache
+            cache.jdbc.table.create=true
+            cache.jdbc.table.drop=true
+         </properties>
+         <singletonStore enabled="true" class="org.jboss.cache.loader.SingletonStoreCacheLoader">
+            <properties>
+               pushStateWhenCoordinator=true
+               pushStateWhenCoordinatorTimeout=20000
+            </properties>
+         </singletonStore>
+      </loader>
+   </loaders>
+
+   <!--
+      Define custom interceptors.  All custom interceptors need to extend org.jboss.cache.interceptors.base.CommandInterceptor
+   -->
+   <!--
+   <customInterceptors>
+      <interceptor position="first" class="org.jboss.cache.config.parsing.custominterceptors.AaaCustomInterceptor">
+         <property name="attrOne" value="value1" />
+         <property name="attrTwo" value="value2" />
+      </interceptor>
+      <interceptor position="last" class="org.jboss.cache.config.parsing.custominterceptors.BbbCustomInterceptor"/>
+      <interceptor index="3" class="org.jboss.cache.config.parsing.custominterceptors.AaaCustomInterceptor"/>
+      <interceptor before="org.jboss.cache.interceptors.CallInterceptor"
+                   class="org.jboss.cache.config.parsing.custominterceptors.BbbCustomInterceptor"/>
+      <interceptor after="org.jboss.cache.interceptors.CallInterceptor"
+                   class="org.jboss.cache.config.parsing.custominterceptors.AaaCustomInterceptor"/>
+   </customInterceptors>
+   -->
+</jbosscache>
+
+
+]]></programlisting>
+      <section>
+         <title>XML validation</title>
+         <para>
+            Configuration XML files are validated using an XSD schema.  This schema is included in
+            <literal>jbosscache-core.jar</literal> and is also available online: <literal>http://www.jboss.org/jbosscache/jbosscache-config-3.0.xsd</literal>.
+            Most IDEs and XML authoring tools will be able to use this schema to validate your configuration file as you
+            write it.
+         </para>
+         <para>
+            JBoss Cache also validates your configuration file when you start up, and will throw an exception if it
+            encounters an invalid file.  You can suppress this behavior by passing in <literal>-Djbosscache.config.validate=false</literal>
+            to your JVM when you start up.  Alternatively, you can point the validator to a different schema by
+            passing in <literal>-Djbosscache.config.schemaLocation=url</literal>.
+         </para>
+      </section>
+   </section>
+
+
+   <section id="configuration_reference">
+      <title>
+         Configuration File Quick Reference
+      </title>
+      <para>A list of definitions of each of the XML elements attributes used above, and their bean counterparts for
+         programmatic configuration. If the description of an attribute states that it is <emphasis>dynamic</emphasis>,
+         that means it can be changed after the cache is created and started.
+      </para>
+
+      <table id="element.jbosscache">
+         <title>The <literal><![CDATA[<jbosscache />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<jbosscache />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This is the root element for the JBoss Cache configuration file.  This is the only mandatory
+                        element in a valid JBoss Cache configuration file.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>none (is root element)</para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.clustering"><literal><![CDATA[<clustering />]]></literal></link>,
+                        <link linkend="element.customInterceptors"><literal><![CDATA[<customInterceptors />]]></literal></link>,
+                        <link linkend="element.eviction"><literal><![CDATA[<eviction />]]></literal></link>,
+                        <link linkend="element.invocationBatching"><literal><![CDATA[<invocationBatching />]]></literal></link>,
+                        <link linkend="element.jmxStatistics"><literal><![CDATA[<jmxStatistics />]]></literal></link>,
+                        <link linkend="element.listeners"><literal><![CDATA[<listeners />]]></literal></link>,
+                        <link linkend="element.loaders"><literal><![CDATA[<loaders />]]></literal></link>,
+                        <link linkend="element.locking"><literal><![CDATA[<locking />]]></literal></link>,
+                        <link linkend="element.serialization"><literal><![CDATA[<serialization />]]></literal></link>,
+                        <link linkend="element.shutdown"><literal><![CDATA[<shutdown />]]></literal></link>,
+                        <link linkend="element.startup"><literal><![CDATA[<startup />]]></literal></link>,
+                        <link linkend="element.transaction"><literal><![CDATA[<transaction />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean Equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>Configuration</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.jbosscache">
+         <title><literal><![CDATA[<jbosscache />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<jbosscache />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">xmlns</emphasis></entry>
+                  <entry> - </entry>
+                  <entry>urn:jboss:jbosscache-core:config:3.1</entry>
+                  <entry>urn:jboss:jbosscache-core:config:3.1</entry>
+                  <entry>Defines the XML namespace for all configuration entries.</entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">xmlns:xsi</emphasis></entry>
+                  <entry> - </entry>
+                  <entry>http://www.w3.org/2001/XMLSchema-instance</entry>
+                  <entry>http://www.w3.org/2001/XMLSchema-instance</entry>
+                  <entry>Defines the XML schema instance for the configuration.</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.locking">
+         <title>The <literal><![CDATA[<locking />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<locking />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element specifies locking behavior on the cache.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>Configuration</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+            
+      <table id="attributes.locking">
+         <title><literal><![CDATA[<locking />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<locking />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">isolationLevel</emphasis></entry>
+                  <entry>isolationLevel</entry>
+                  <entry>READ_COMMITTED, REPEATABLE_READ</entry>
+                  <entry>REPEATABLE_READ</entry>
+
+                  <entry>The isolation level used for transactions.</entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">lockParentForChildInsertRemove</emphasis></entry>
+                  <entry>lockParentForChildInsertRemove</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+
+                  <entry>Specifies whether parent nodes are locked when inserting or removing children.  This
+                     can also be configured on a per-node basis (see <literal>Node.setLockForChildInsertRemove()</literal></entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">lockAcquisitionTimeout</emphasis></entry>
+                  <entry>lockAcquisitionTimeout
+                     (<emphasis>dynamic</emphasis>)</entry>
+                  <entry>Any positive long value</entry>
+                  <entry>10000</entry>
+
+                  <entry>Length of time, in milliseconds, that a thread will try and acquire a lock.  A <literal>TimeoutException</literal>
+                  is usually thrown if a lock cannot be acquired in this given timeframe.  Can be overridden
+                  on a per-invocation basis using <literal>Option.setLockAcquisitionTimeout()</literal></entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">nodeLockingScheme</emphasis>
+                     (<emphasis>deprecated</emphasis>)</entry>
+                  <entry>nodeLockingScheme</entry>
+                  <entry>mvcc, pessimistic, optimistic</entry>
+                  <entry>mvcc</entry>
+
+                  <entry>Specifies the node locking scheme to be used.</entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">writeSkewCheck</emphasis></entry>
+                  <entry>writeSkewCheck</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+
+                  <entry>Specifies whether to check for write skews.  Only used if <literal>nodeLockingScheme</literal>
+                  is <literal>mvcc</literal> and <literal>isolationLevel</literal> is <literal>REPEATABLE_READ</literal>.
+                  See the <link linkend="mvcc.writeskew">section on write skews</link> for a more detailed discussion.</entry>
+               </row>
+                <row>
+                  <entry><emphasis role="bold">useLockStriping</emphasis></entry>
+                  <entry>useLockStriping</entry>
+                  <entry>true, false</entry>
+                  <entry>true</entry>
+
+                  <entry>Specifies whether lock striping is used.  Only used if <literal>nodeLockingScheme</literal>
+                    is <literal>mvcc</literal>.  Lock striping usually offers greater performance and better memory usage,
+                    although in certain cases deadlocks may occur where several Fqns map to the same shared lock.  This
+                    can be mitigated by increasing your concurrency level, though the only concrete solution is to
+                    disable lock striping altogether.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">concurrencyLevel</emphasis></entry>
+                  <entry>concurrencyLevel</entry>
+                  <entry>Any positive integer; 0 not allowed.</entry>
+                  <entry>500</entry>
+
+                  <entry>Specifies the number of shared locks to use for write locks acquired.  Only used if <literal>nodeLockingScheme</literal>
+                  is <literal>mvcc</literal>.
+                  See the <link linkend="mvcc.impl">section on JBoss Cache's MVCC implementation</link> for a more detailed discussion.</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.transaction">
+         <title>The <literal><![CDATA[<transaction />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<transaction />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element specifies transactional behavior on the cache.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>Configuration</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.transaction">
+         <title><literal><![CDATA[<transaction />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<transaction />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">transactionManagerLookupClass</emphasis></entry>
+                  <entry>transactionManagerLookupClass</entry>
+                  <entry>A valid class that is available on the classpath</entry>
+                  <entry>none</entry>
+
+                  <entry>Specifies the <literal>TransactionManagerLookupClass</literal> implementation to use to obtain
+                  a transaction manager.  If not specified (and a <literal>TransactionManager</literal> is not injected
+                  using <literal>RuntimeConfig.setTransactionManager()</literal>, the cache will not be able to participate
+                  in any transactions.</entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">syncCommitPhase</emphasis></entry>
+                  <entry>syncCommitPhase
+                     (<emphasis>dynamic</emphasis>)
+                  </entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+
+                  <entry>If enabled, commit messages that are broadcast around a cluster are done so synchronously.  This is
+                  usually of little value since detecting a failure in broadcasting a commit means little else can be done
+                  except log a message, since some nodes in a cluster may have already committed and cannot rollback.</entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">syncRollbackPhase</emphasis></entry>
+                  <entry>syncRollbackPhase
+                     (<emphasis>dynamic</emphasis>)
+                  </entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+
+                  <entry>If enabled, rollback messages that are broadcast around a cluster are done so synchronously.  This is
+                  usually of little value since detecting a failure in broadcasting a rollback means little else can be done
+                  except log a message, since some nodes in a cluster may have already committed and cannot rollback.</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.jmxStatistics">
+         <title>The <literal><![CDATA[<jmxStatistics />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<jmxStatistics />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element specifies whether cache statistics are gathered and reported via JMX.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>Configuration</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.jmxStatistics">
+         <title><literal><![CDATA[<jmxStatistics />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<jmxStatistics />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">enabled</emphasis></entry>
+                  <entry>exposeManagementStatistics</entry>
+                  <entry>true, false</entry>
+                  <entry>true</entry>
+
+                  <entry>Controls whether cache statistics are gathered and exposed via JMX.</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.startup">
+         <title>The <literal><![CDATA[<startup />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<startup />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element specifies behavior when the cache starts up.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>Configuration</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.startup">
+         <title><literal><![CDATA[<startup />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<startup />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">regionsInactiveOnStartup</emphasis></entry>
+                  <entry>inactiveOnStartup</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+
+                  <entry>If <link linkend="architecture.regions">region-based marshalling</link> is enabled, this
+                     attribute controls whether new regions created are inactive on startup.</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.shutdown">
+         <title>The <literal><![CDATA[<shutdown />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<shutdown />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element specifies behavior when the cache shuts down.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>Configuration</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.shutdown">
+         <title><literal><![CDATA[<shutdown />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<shutdown />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">hookBehavior</emphasis></entry>
+                  <entry>shutdownHookBehavior</entry>
+                  <entry>DEFAULT, DONT_REGISTER, REGISTER</entry>
+                  <entry>DEFAULT</entry>
+
+                  <entry>
+                     This attribute determines whether the cache registers a JVM shutdown hook so that it can clean
+                     up resources if the JVM is receives a shutdown signal.  By default a shutdown hook is registered
+                     if no MBean server (apart from the JDK default) is detected.  REGSTER forces the cache to register
+                     a shutdown hook even if an MBean server is detected, and DONT_REGISTER forces the cache NOT to
+                     register a shutdown hook, even if no MBean server is detected.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.listeners">
+         <title>The <literal><![CDATA[<listeners />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<listeners />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element specifies behavior of registered cache listeners.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>Configuration</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.listeners">
+         <title><literal><![CDATA[<listeners />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<listeners />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">asyncPoolSize</emphasis></entry>
+                  <entry>listenerAsyncPoolSize</entry>
+                  <entry>integer</entry>
+                  <entry>1</entry>
+
+                  <entry>
+                     The size of the threadpool used to dispatch events to cache listeners that have registered as
+                     asynchronous listeners.  If this number is less than 1, all asynchronous listeners will be
+                     treated as synchronous listeners and notified synchronously.
+                  </entry>
+               </row>
+
+                <row>
+                  <entry><emphasis role="bold">asyncQueueSize</emphasis></entry>
+                  <entry>listenerAsyncQueueSize</entry>
+                  <entry>positive integer</entry>
+                  <entry>50000</entry>
+
+                  <entry>
+                     The size of the bounded queue used by the async listener threadpool.  Only considered if
+                     <literal>asyncPoolSize</literal> is greater than 0.  Increase this if you see a lot of threads
+                     blocking trying to add events to this queue.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.invocationBatching">
+         <title>The <literal><![CDATA[<invocationBatching />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<invocationBatching />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element specifies behavior of invocation batching.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>Configuration</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.invocationBatching">
+         <title><literal><![CDATA[<invocationBatching />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<invocationBatching />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">enabled</emphasis></entry>
+                  <entry>invocationBatchingEnabled</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+
+                  <entry>
+                     Whether invocation batching is enabled or not.  See the chapter on
+                     <link linkend="batching">invocation batching</link> for details.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.serialization">
+         <title>The <literal><![CDATA[<serialization />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<serialization />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element specifies behavior of object serialization in JBoss Cache. 
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>Configuration</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.serialization">
+         <title><literal><![CDATA[<serialization />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<serialization />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">marshallerClass</emphasis></entry>
+                  <entry>marshallerClass</entry>
+                  <entry>A valid class that is available on the classpath</entry>
+                  <entry>VersionAwareMarshaller</entry>
+
+                  <entry>
+                     Specifies the marshaller to use when serializing and deserializing objects, either for replication
+                     or persistence.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">useLazyDeserialization</emphasis></entry>
+                  <entry>useLazyDeserialization</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+
+                  <entry>
+                     A mechanism by which serialization and deserialization of objects is deferred till the point in time
+                     in which they are used and needed.  This typically means that any deserialization happens using the
+                     thread context class loader of the invocation that requires deserialization, and is an effective
+                     mechanism to provide classloader isolation.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">useRegionBasedMarshalling</emphasis> (<emphasis>deprecated</emphasis>)</entry>
+                  <entry>useRegionBasedMarshalling</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+
+                  <entry>
+                     An older mechanism by which classloader isolation was achieved, by registering classloaders on
+                     specific regions.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">version</emphasis></entry>
+                  <entry>replicationVersion</entry>
+                  <entry>Valid JBoss Cache version string</entry>
+                  <entry>Current version</entry>
+
+                  <entry>
+                     Used by the <literal>VersionAwareMarshaller</literal> in determining which version stream parser
+                     to use by default when initiating communications in a cluster.  Useful when you need to run a newer
+                     version of JBoss Cache in a cluster containing older versions, and can be used to perform rolling
+                     upgrades.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">objectInputStreamPoolSize</emphasis></entry>
+                  <entry>objectInputStreamPoolSize</entry>
+                  <entry>Positive integer</entry>
+                  <entry>50</entry>
+
+                  <entry>
+                     Not used at the moment.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">objectOutputStreamPoolSize</emphasis></entry>
+                  <entry>objectOutputStreamPoolSize</entry>
+                  <entry>Positive integer</entry>
+                  <entry>50</entry>
+
+                  <entry>
+                     Not used at the moment.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.eviction">
+         <title>The <literal><![CDATA[<eviction />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<eviction />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element controls how eviction works in the cache.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.default"><literal><![CDATA[<default />]]></literal></link>,
+                        <link linkend="element.region"><literal><![CDATA[<region />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>EvictionConfig</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.eviction">
+         <title><literal><![CDATA[<eviction />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<eviction />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">wakeUpInterval</emphasis></entry>
+                  <entry>wakeupInterval</entry>
+                  <entry>integer</entry>
+                  <entry>5000</entry>
+
+                  <entry>
+                     The frequency with which the eviction thread runs, in milliseconds.  If set to less than 1, the
+                     eviction thread never runs and is effectively disabled.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.default">
+         <title>The <literal><![CDATA[<default />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<default />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element defines the default eviction region.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><link linkend="element.eviction"><literal><![CDATA[<eviction />]]></literal></link></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.property"><literal><![CDATA[<property />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>EvictionRegionConfig</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.default">
+         <title><literal><![CDATA[<default />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<default />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">algorithmClass</emphasis></entry>
+                  <entry>evictionAlgorithmConfig</entry>
+                  <entry>A valid class that is available on the classpath</entry>
+                  <entry>none</entry>
+                  <entry>
+                     This attribute needs to be specified if this tag is being used.  Note that if being configured
+                     programmatically, the eviction algorithm's corresponding <literal>EvictionAlgorithmConfig</literal>
+                     file should be used instead.  E.g., where you would use <literal>LRUAlgorithm</literal> in XML, you
+                     would use an instance of <literal>LRUAlgorithmConfig</literal> programmatically.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">actionPolicyClass</emphasis></entry>
+                  <entry>evictionActionPolicyClassName</entry>
+                  <entry>A valid class that is available on the classpath</entry>
+                  <entry>DefaultEvictionActionPolicy</entry>
+                  <entry>
+                     The eviction action policy class, defining what happens when a node needs to be evicted.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">eventQueueSize</emphasis></entry>
+                  <entry>eventQueueSize
+                  (<emphasis>dynamic</emphasis></entry>
+                  <entry>integer</entry>
+                  <entry>200000</entry>
+                  <entry>
+                     The size of the bounded eviction event queue.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.region">
+         <title>The <literal><![CDATA[<region />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<region />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element defines an eviction region.  Multiple instances of this tag can exist provided they
+                        have unique <literal>name</literal> attributes.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><link linkend="element.eviction"><literal><![CDATA[<eviction />]]></literal></link></para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.property"><literal><![CDATA[<property />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para><literal>EvictionRegionConfig</literal></para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.region">
+         <title><literal><![CDATA[<region />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<region />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">name</emphasis></entry>
+                  <entry>regionFqn</entry>
+                  <entry>A String that could be parsed using Fqn.fromString()</entry>
+                  <entry>none</entry>
+                  <entry>
+                     This should be a unique name that defines this region.  See the <link linkend="regions">chapter on eviction</link>
+                     for details of eviction regions.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">algorithmClass</emphasis></entry>
+                  <entry>evictionAlgorithmConfig</entry>
+                  <entry>A valid class that is available on the classpath</entry>
+                  <entry>none</entry>
+                  <entry>
+                     This attribute needs to be specified if this tag is being used.  Note that if being configured
+                     programmatically, the eviction algorithm's corresponding <literal>EvictionAlgorithmConfig</literal>
+                     file should be used instead.  E.g., where you would use <literal>LRUAlgorithm</literal> in XML, you
+                     would use an instance of <literal>LRUAlgorithmConfig</literal> programmatically.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">actionPolicyClass</emphasis></entry>
+                  <entry>evictionActionPolicyClassName</entry>
+                  <entry>A valid class that is available on the classpath</entry>
+                  <entry>DefaultEvictionActionPolicy</entry>
+                  <entry>
+                     The eviction action policy class, defining what happens when a node needs to be evicted.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">eventQueueSize</emphasis></entry>
+                  <entry>eventQueueSize
+                  (<emphasis>dynamic</emphasis></entry>
+                  <entry>integer</entry>
+                  <entry>200000</entry>
+                  <entry>
+                     The size of the bounded eviction event queue.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.property">
+         <title>The <literal><![CDATA[<property />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<property />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        A mechanism of passing in name-value properties to the enclosing configuration element.                        
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.default"><literal><![CDATA[<default />]]></literal></link>,
+                        <link linkend="element.region"><literal><![CDATA[<region />]]></literal></link>,
+                        <link linkend="element.interceptor"><literal><![CDATA[<interceptor />]]></literal></link>
+                     </para>                     
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry></entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>Either direct setters or <literal>setProperties()</literal> enclosing bean</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.property">
+         <title><literal><![CDATA[<property />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<property />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">name</emphasis></entry>
+                  <entry>Either direct setters or <literal>setProperties()</literal> enclosing bean</entry>
+                  <entry>String</entry>
+                  <entry>none</entry>
+                  <entry>
+                     Property name
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">value</emphasis></entry>
+                  <entry>Either direct setters or <literal>setProperties()</literal> enclosing bean</entry>
+                  <entry>String</entry>
+                  <entry>none</entry>
+                  <entry>
+                     Property value
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.loaders">
+         <title>The <literal><![CDATA[<loaders />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<loaders />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        Defines any cache loaders.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <link linkend="element.preload"><literal><![CDATA[<preload />]]></literal></link>,
+                     <link linkend="element.loader"><literal><![CDATA[<loader />]]></literal></link>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>CacheLoaderConfig</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.loaders">
+         <title><literal><![CDATA[<loaders />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<loaders />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">passivation</emphasis></entry>
+                  <entry>passivation</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+                  <entry>
+                     If true, cache loaders are used in passivation mode.  See the <link linkend="cache_loaders">chapter on cache loaders</link>
+                     for a detailed discussion on this.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">shared</emphasis></entry>
+                  <entry>shared</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+                  <entry>
+                     If true, cache loaders are used in shared mode.  See the <link linkend="cache_loaders">chapter on cache loaders</link>
+                     for a detailed discussion on this.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.preload">
+         <title>The <literal><![CDATA[<preload />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<preload />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        Defines preloading of Fqn subtrees when a cache starts up.  This element has no attributes.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.loaders"><literal><![CDATA[<loaders />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <link linkend="element.node"><literal><![CDATA[<node />]]></literal></link>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>CacheLoaderConfig</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.node">
+         <title>The <literal><![CDATA[<node />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<node />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element defines a subtree under which all content will be preloaded from the cache loaders
+                        when the cache starts.  Multiple subtrees can be preloaded, although it only makes sense to
+                        define more than one subtree if they do not overlap.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.preload"><literal><![CDATA[<preload />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry></entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>CacheLoaderConfig</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.node">
+         <title><literal><![CDATA[<node />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<node />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">fqn</emphasis></entry>
+                  <entry>preload</entry>
+                  <entry>String</entry>
+                  <entry>none</entry>
+                  <entry>
+                     An Fqn to preload.  This should be a String that can be parsed with Fqn.fromString().  When doing
+                     this programmatically, you should create a single String containing all of the Fqns you wish to
+                     preload, separated by spaces, and pass that into <literal>CacheLoaderConfig.setPreload()</literal>.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.loader">
+         <title>The <literal><![CDATA[<loader />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<loader />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element defines a cache loader.  Multiple elements may be used to create cache loader
+                        chains.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.loaders"><literal><![CDATA[<loaders />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <link linkend="element.properties"><literal><![CDATA[<properties />]]></literal></link>,
+                     <link linkend="element.singletonStore"><literal><![CDATA[<singletonStore />]]></literal></link>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>IndividualCacheLoaderConfig</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.loader">
+         <title><literal><![CDATA[<loader />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<loader />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">class</emphasis></entry>
+                  <entry>className</entry>
+                  <entry>A valid class that is available on the classpath</entry>
+                  <entry>none</entry>
+                  <entry>
+                     A cache loader implementation to use.
+                  </entry>
+               </row>
+
+               <row>
+                  <entry><emphasis role="bold">async</emphasis></entry>
+                  <entry>async</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+                  <entry>
+                     All modifications to this cache loader happen asynchronously, on a separate thread.
+                  </entry>
+               </row>
+
+               <row>
+                  <entry><emphasis role="bold">fetchPersistentState</emphasis></entry>
+                  <entry>fetchPersistentState</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+                  <entry>
+                     When a cache starts up, retrieve persistent state from the cache loaders in other caches in the
+                     cluster.  Only <emphasis>one</emphasis> loader element may set this to true.  Also, only makes
+                     sense if the <link linkend="element.clustering"><literal><![CDATA[<clustering />]]></literal></link>
+                     tag is present.
+
+                  </entry>
+               </row>
+
+               <row>
+                  <entry><emphasis role="bold">purgeOnStartup</emphasis></entry>
+                  <entry>purgeOnStartup</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+                  <entry>
+                     Purges this cache loader when it starts up.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.properties">
+         <title>The <literal><![CDATA[<properties />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<properties />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element contains a set of properties that can be read by a <literal>java.util.Properties</literal>
+                        instance.  This tag has no attributes, and the contents of this tag will be parsed by
+                        <literal>Properties.load()</literal>.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.loader"><literal><![CDATA[<loader />]]></literal></link>,
+                        <link linkend="element.singletonStore"><literal><![CDATA[<singletonStore />]]></literal></link>,
+                        <link linkend="element.locator"><literal><![CDATA[<locator />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry></entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>IndividualCacheLoaderConfig.setProperties()</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.singletonStore">
+         <title>The <literal><![CDATA[<singletonStore />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<singletonStore />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element configures the enclosing cache loader as a <link linkend="sscl">singleton store cache loader</link>.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.loader"><literal><![CDATA[<loader />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <link linkend="element.properties"><literal><![CDATA[<properties />]]></literal></link>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>SingletonStoreConfig</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.singletonStore">
+         <title><literal><![CDATA[<singletonStore />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<singletonStore />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">class</emphasis></entry>
+                  <entry>className</entry>
+                  <entry>A valid class that is available on the classpath</entry>
+                  <entry>SingletonStoreCacheLoader</entry>
+                  <entry>
+                     A singleton store wrapper implementation to use.
+                  </entry>
+               </row>
+
+               <row>
+                  <entry><emphasis role="bold">enabled</emphasis></entry>
+                  <entry>enabled</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+                  <entry>
+                     If true, the singleton store cache loader is enabled.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.customInterceptors">
+         <title>The <literal><![CDATA[<customInterceptors />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<customInterceptors />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element allows you to define custom interceptors for the cache.  This tag has no attributes.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <link linkend="element.interceptor"><literal><![CDATA[<interceptor />]]></literal></link>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>None.  At runtime, instantiate your own interceptor and pass it in to the cache using
+                     <literal>Cache.addInterceptor()</literal>.</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.interceptor">
+         <title>The <literal><![CDATA[<interceptor />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<interceptor />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This element allows you configure a custom interceptor.  This tag may appear multiple times.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.customInterceptor"><literal><![CDATA[<customInterceptor />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <link linkend="element.property"><literal><![CDATA[<property />]]></literal></link>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>None.  At runtime, instantiate your own interceptor and pass it in to the cache using
+                     <literal>Cache.addInterceptor()</literal>.</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.interceptor">
+         <title><literal><![CDATA[<interceptor />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<interceptor />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">class</emphasis></entry>
+                  <entry> - </entry>
+                  <entry>A valid class that is available on the classpath</entry>
+                  <entry>none</entry>
+                  <entry>
+                     An implementation of <literal>CommandInterceptor</literal>.
+                  </entry>
+               </row>
+
+               <row>
+                  <entry><emphasis role="bold">position</emphasis></entry>
+                  <entry> - </entry>
+                  <entry>first, last</entry>
+                  <entry></entry>
+                  <entry>
+                     A position at which to place this interceptor in the chain.  First is the first interceptor
+                     encountered when an invocation is made on the cache, last is the last interceptor before the
+                     call is passed on to the data structure.  <emphasis>Note that this attribute is mutually
+                  exclusive with <literal>before</literal>, <literal>after</literal> and <literal>index</literal>.</emphasis>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry><emphasis role="bold">before</emphasis></entry>
+                  <entry> - </entry>
+                  <entry>Fully qualified class name of an interceptor</entry>
+                  <entry></entry>
+                  <entry>
+                     Will place the new interceptor directly before the instance of the named interceptor.
+                     <emphasis>Note that this attribute is mutually exclusive with <literal>position</literal>,
+                        <literal>after</literal> and <literal>index</literal>.</emphasis>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry><emphasis role="bold">after</emphasis></entry>
+                  <entry> - </entry>
+                  <entry>Fully qualified class name of an interceptor</entry>
+                  <entry></entry>
+                  <entry>
+                     Will place the new interceptor directly after the instance of the named interceptor.
+                     <emphasis>Note that this attribute is mutually exclusive with <literal>position</literal>,
+                        <literal>before</literal> and <literal>index</literal>.</emphasis>
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">index</emphasis></entry>
+                  <entry> - </entry>
+                  <entry>Positive integers</entry>
+                  <entry></entry>
+                  <entry>
+                     A position at which to place this interceptor in the chain, with 0 being the first position.
+                     <emphasis>Note that this attribute is mutually exclusive with <literal>position</literal>,
+                        <literal>before</literal> and <literal>after</literal>.</emphasis>
+                  </entry>
+               </row>
+
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.clustering">
+         <title>The <literal><![CDATA[<clustering />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<clustering />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        If this element is present, the cache is started in clustered mode.  Attributes and child
+                        elements define clustering characteristics.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.jbosscache"><literal><![CDATA[<jbosscache />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <link linkend="element.stateRetrieval"><literal><![CDATA[<stateRetrieval />]]></literal></link>,
+                     <link linkend="element.sync"><literal><![CDATA[<sync />]]></literal></link>,
+                     <link linkend="element.async"><literal><![CDATA[<async />]]></literal></link>,
+                     <link linkend="element.buddy"><literal><![CDATA[<buddy />]]></literal></link>,
+                     <link linkend="element.jgroupsConfig"><literal><![CDATA[<jgroupsConfig />]]></literal></link>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>Configuration</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.clustering">
+         <title><literal><![CDATA[<clustering />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<clustering />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">mode</emphasis></entry>
+                  <entry>cacheMode</entry>
+                  <entry>replication, invalidation, r, i</entry>
+                  <entry>replication</entry>
+                  <entry>
+                     See the <link linkend="clustering">chapter on clustering</link> for the differences between
+                     replication and invalidation.  When using the bean, synchronous and asynchronous communication is
+                     combined with clustering mode to give you the enumberation <literal>Configuration.CacheMode</literal>.
+                  </entry>
+               </row>
+
+               <row>
+                  <entry><emphasis role="bold">clusterName</emphasis></entry>
+                  <entry>clusterName</entry>
+                  <entry>String</entry>
+                  <entry>JBossCache-cluster</entry>
+                  <entry>
+                     A cluster name which is used to identify the cluster to join.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.sync">
+         <title>The <literal><![CDATA[<sync />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<sync />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        If this element is present, all communications are synchronous, in that whenever a thread sends
+                        a message sent over the wire, it blocks until it receives an acknowledgement from the recipient.
+                        This element is mutually exclusive with the <link linkend="element.async"><literal><![CDATA[<async />]]></literal></link>
+                        element.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.clustering"><literal><![CDATA[<clustering />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>Configuration.setCacheMode()</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.sync">
+         <title><literal><![CDATA[<sync />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<sync />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">replTimeout</emphasis></entry>
+                  <entry>syncReplTimeout (<emphasis>dynamic</emphasis>)</entry>
+                  <entry>positive integer</entry>
+                  <entry>15000</entry>
+                  <entry>
+                     This is the timeout used to wait for an acknowledgement when making a remote call, after which
+                     an exception is thrown.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+      
+      <table id="element.async">
+         <title>The <literal><![CDATA[<async />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<async />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        If this element is present, all communications are asynchronous, in that whenever a thread sends
+                        a message sent over the wire, it does not wait for an acknowledgement before returning.
+                        This element is mutually exclusive with the <link linkend="element.sync"><literal><![CDATA[<sync />]]></literal></link>
+                        element.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.clustering"><literal><![CDATA[<clustering />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>Configuration.setCacheMode()</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.async">
+         <title><literal><![CDATA[<async />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<async />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">serializationExecutorPoolSize</emphasis></entry>
+                  <entry>serializationExecutorPoolSize</entry>
+                  <entry>positive integer</entry>
+                  <entry>25</entry>
+                  <entry>
+                     In addition to replication happening asynchronously, even serialization of contents for replication
+                     happens in a separate thread to allow the caller to return as quickly as possible.  This setting
+                     controls the size of the serializer thread pool.  Setting this to any value less than 1 means
+                     serialization does not happen asynchronously.
+                  </entry>
+               </row>
+                <row>
+                  <entry><emphasis role="bold">serializationExecutorQueueSize</emphasis></entry>
+                  <entry>serializationExecutorQueueSize</entry>
+                  <entry>positive integer</entry>
+                  <entry>50000</entry>
+                  <entry>
+                     This is used to define the size of the bounded queue that holds tasks for the serialization executor.
+                     This is ignored if a serialization executor is not used, such as when <literal>serializationExecutorPoolSize</literal>
+                     is less than 1.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">useReplQueue</emphasis></entry>
+                  <entry>useReplQueue</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+                  <entry>
+                     If true, this forces all async communications to be queued up and sent out periodically as a batch.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">replQueueInterval</emphasis></entry>
+                  <entry>replQueueInterval</entry>
+                  <entry>positive integer</entry>
+                  <entry>5000</entry>
+                  <entry>
+                     If <literal>useReplQueue</literal> is set to true, this attribute controls how often the asynchronous
+                     thread used to flush the replication queue runs.  This should be a positive integer which represents
+                     thread wakeup time in milliseconds.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">replQueueMaxElements</emphasis></entry>
+                  <entry>replQueueMaxElements</entry>
+                  <entry>positive integer</entry>
+                  <entry>1000</entry>
+                  <entry>
+                     If <literal>useReplQueue</literal> is set to true, this attribute can be used to trigger flushing
+                     of the queue when it reaches a specific threshold.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.stateRetrieval">
+         <title>The <literal><![CDATA[<stateRetrieval />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<stateRetrieval />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This tag controls ho state is retrieved from neighboring caches when this cache instance starts.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.clustering"><literal><![CDATA[<clustering />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>Configuration</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.stateRetrieval">
+         <title><literal><![CDATA[<stateRetrieval />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<stateRetrieval />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">fetchInMemoryState</emphasis></entry>
+                  <entry>fetchInMemoryState</entry>
+                  <entry>true, false</entry>
+                  <entry>true</entry>
+                  <entry>
+                     If true, this will cause the cache to ask neighboring caches for state when it starts up, so the
+                     cache starts "warm".
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">timeout</emphasis></entry>
+                  <entry>stateRetrievalTimeout</entry>
+                  <entry>positive integer</entry>
+                  <entry>10000</entry>
+                  <entry>
+                     This is the maximum amount of time - in milliseconds - to wait for state from neighboring caches,
+                     before throwing an exception and aborting startup.
+                  </entry>
+               </row>
+                <row>
+                  <entry><emphasis role="bold">nonBlocking</emphasis></entry>
+                  <entry>useNonBlockingStateTransfer</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+                  <entry>
+                     This configuration switch enables the Non-Blocking State Transfer mechanism, new in 3.1.0.  Note that
+                      this requires MVCC as a node locking scheme, and that STREAMING_STATE_TRANSFER is present in the
+                      JGroups stack used.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.buddy">
+         <title>The <literal><![CDATA[<buddy />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<buddy />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        If this tag is present, then state is not replicated across the entire cluster.  Instead, buddy
+                        replication is used to select cache instances to maintain backups on.  See
+                        <link linkend="br">this section on buddy replication</link> for details.  Note that this is only
+                        used if the clustering mode is <literal>replication</literal>, and not if it is <literal>invalidation</literal>. 
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.clustering"><literal><![CDATA[<clustering />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <link linkend="element.dataGravitation"><literal><![CDATA[<dataGravitation />]]></literal></link>,
+                     <link linkend="element.locator"><literal><![CDATA[<locator />]]></literal></link>,
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>BuddyReplicationConfig</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.buddy">
+         <title><literal><![CDATA[<buddy />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<buddy />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">enabled</emphasis></entry>
+                  <entry>enabled</entry>
+                  <entry>true, false</entry>
+                  <entry>false</entry>
+                  <entry>
+                     If true, buddy replication is enabled.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">communicationTimeout</emphasis></entry>
+                  <entry>buddyCommunicationTimeout</entry>
+                  <entry>positive integer</entry>
+                  <entry>10000</entry>
+                  <entry>
+                     This is the maximum amount of time - in milliseconds - to wait for buddy group organization
+                     communications from buddy caches.                      
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">poolName</emphasis></entry>
+                  <entry>buddyPoolName</entry>
+                  <entry>String</entry>
+                  <entry></entry>
+                  <entry>
+                     This is used as a means to identify cache instances and provide hints to the buddy selection
+                     algorithms.  More information on <link linkend="br">the section on buddy replication</link>.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.dataGravitation">
+         <title>The <literal><![CDATA[<dataGravitation />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<dataGravitation />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This tag configures how data gravitation is conducted.  See
+                        <link linkend="br">this section on buddy replication</link> for details.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.buddy"><literal><![CDATA[<buddy />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>BuddyReplicationConfig</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.dataGravitation">
+         <title><literal><![CDATA[<dataGravitation />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<dataGravitation />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">auto</emphasis></entry>
+                  <entry>autoDataGravitation</entry>
+                  <entry>true, false</entry>
+                  <entry>true</entry>
+                  <entry>
+                     If true, when a get() is performed on a cache and nothing is found, a gravitation from neighboring
+                     caches is attempted.  If this is false, then gravitations can only occur if the
+                     <literal>Option.setForceDataGravitation()</literal> option is provided.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">removeOnFind</emphasis></entry>
+                  <entry>dataGravitationRemoveOnFind</entry>
+                  <entry>true, false</entry>
+                  <entry>true</entry>
+                  <entry>
+                     If true, when gravitation occurs, the instance that requests the gravitation takes ownership of
+                     the state and requests that all other instances remove the gravitated state from memory.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">searchBackupTrees</emphasis></entry>
+                  <entry>dataGravitationSearchBackupTrees</entry>
+                  <entry>true, false</entry>
+                  <entry>true</entry>
+                  <entry>
+                     If true, incoming gravitation requests will cause the cache to search not just its primary
+                     data structure but its backup structure as well.
+                  </entry>
+               </row>
+
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.locator">
+         <title>The <literal><![CDATA[<locator />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<locator />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This tag provides a pluggable mechanism for providing buddy location algorithms.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.buddy"><literal><![CDATA[<buddy />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <link linkend="element.properties"><literal><![CDATA[<properties />]]></literal></link>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>BuddyLocatorConfig</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.locator">
+         <title><literal><![CDATA[<locator />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<locator />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">class</emphasis></entry>
+                  <entry>className</entry>
+                  <entry>A valid class that is available on the classpath</entry>
+                  <entry>NextMemberBuddyLocator</entry>
+                  <entry>
+                     A <literal>BuddyLocator</literal> implementation to use when selecting buddies from the cluster.
+                     Please refer to <literal>BuddyLocator</literal> javadocs for details.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="element.jgroupsConfig">
+         <title>The <literal><![CDATA[<jgroupsConfig />]]></literal> Element</title>
+         <tgroup cols="2" align="left">
+            <colspec colname="name" />
+            <colspec colname="desc" />
+            <spanspec spanname="hspan" namest="name" nameend="desc" align="left" />
+
+            <thead valign="top">
+               <row>
+                  <entry spanname="hspan">The <literal><![CDATA[<jgroupsConfig />]]></literal> Element</entry>
+               </row>
+            </thead>
+            <tbody valign="top">
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Description</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        This tag provides a configuration which is used with JGroups to create a network communication
+                        channel.
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Parent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>
+                        <link linkend="element.clustering"><literal><![CDATA[<clustering />]]></literal></link>
+                     </para>
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Children</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     A series of elements representing JGroups protocols (see
+                     <ulink url="http://www.jgroups.org/javagroupsnew/docs/ug.html">JGroups documentation</ulink>).  Note
+                     that there are no child elements if any of the element attributes are used instead.  See section
+                     on attributes.
+                  </entry>
+               </row>
+
+               <row>
+                  <entry>
+                     <para><emphasis role="bold">Bean equivalent</emphasis></para>
+                  </entry>
+
+                  <entry>
+                     <para>Configuration</para>
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+
+      <table id="attributes.jgroupsConfig">
+         <title><literal><![CDATA[<jgroupsConfig />]]></literal> Attributes</title>
+         <tgroup cols="5" align="left">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+            <colspec colname="c4" />
+            <colspec colname="c5" />
+
+            <spanspec spanname="hspan" namest="c1" nameend="c5" align="left" />
+            <thead valign="top">
+               <row><entry spanname="hspan"><literal><![CDATA[<jgroupsConfig />]]></literal> Attributes</entry></row>
+               <row>
+                  <entry>Attribute</entry>
+                  <entry>Bean Field</entry>
+                  <entry>Allowed</entry>
+                  <entry>Default</entry>
+                  <entry>Description</entry>
+               </row>
+            </thead>
+
+            <tbody valign="top">
+               <row>
+                  <entry><emphasis role="bold">configFile</emphasis></entry>
+                  <entry>clusterConfig</entry>
+                  <entry>A JGroups configuration file on the classpath</entry>
+                  <entry>udp.xml</entry>
+                  <entry>
+                     If this attribute is used, then any JGroups elements representing protocols within this tag are
+                     ignored.  Instead, JGroups settings are read from the file specified.  Note that this cannot be used
+                     with the <literal>multiplexerStack</literal> attribute.
+                  </entry>
+               </row>
+               <row>
+                  <entry><emphasis role="bold">multiplexerStack</emphasis></entry>
+                  <entry>muxStackName</entry>
+                  <entry>A valid multiplexer stack name that exists in the channel factory passed in to the <literal>RuntimeConfig</literal></entry>
+                  <entry></entry>
+                  <entry>
+                     This can only be used with the <literal>RuntimeConfig</literal>, where you pass in a JGroups
+                     <literal>ChannelFactory</literal> instance using <literal>RuntimeConfig.setMuxChannelFactory()</literal>.
+                     If this attribute is used, then any JGroups elements representing protocols within this tag are
+                     ignored.  Instead, the JGroups channel is created using the factory passed in.  Note that this cannot be
+                     used with the <literal>configFile</literal> attribute.
+                  </entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+   </section>
+</chapter>

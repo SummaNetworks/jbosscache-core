@@ -1,0 +1,37 @@
+package org.jboss.cache.marshall;
+
+import java.io.Serializable;
+import java.security.SecureRandom;
+import java.util.Random;
+
+/**
+ * This is the java code used to create the Foo.clazz file. File deliberately
+ * doesn't end in .java, as we don't want a Foo.class on the classpath,
+ * only the Foo.clazz file that FooClassLoader can load.
+ * 
+ * @author <a href="brian.stansberry@jboss.com">Brian Stansberry</a>
+ * @version $Revision: 3095 $
+ */
+public class Foo implements Serializable
+{
+   /** The serialVersionUID */
+   private static final long serialVersionUID = 1L;
+
+   public boolean equals(Object obj)
+   {      
+      return obj instanceof Foo;
+   }
+
+   public int hashCode()
+   {
+      return 1;
+   }   
+
+   public String toString()
+   {
+      Random random = new SecureRandom();
+      StringBuffer sb=new StringBuffer("org.jboss.cache.marshall.Foo[random=");
+      sb.append(random.nextInt()).append("]");
+      return sb.toString();
+   }
+}

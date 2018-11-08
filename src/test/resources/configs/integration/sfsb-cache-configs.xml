@@ -1,0 +1,263 @@
+<cache-configs>
+
+    <!-- 
+      | A config appropriate for EJB3 SFSB caching.
+    -->
+    <cache-config name="sfsb-cache">
+        <!--  No transaction manager lookup -->
+        
+        <attribute name="NodeLockingScheme">PESSIMISTIC</attribute>
+        <attribute name="IsolationLevel">REPEATABLE_READ</attribute>
+
+        <!-- Valid modes are LOCAL
+                             REPL_ASYNC
+                             REPL_SYNC
+        -->
+        <attribute name="CacheMode">REPL_ASYNC</attribute>
+
+        <!-- Name of cluster. Needs to be the same for all members, in order
+             to find each other -->
+        <attribute name="ClusterName">${jboss.partition.name:JBCTest}-SFSBCache</attribute>
+        
+        <!-- Use a UDP (multicast) based stack. Need JGroups flow control (FC)
+             because we are using asynchronous replication.
+        -->
+        <attribute name="MultiplexerStack">${jboss.default.jgroups.stack:udp}</attribute>
+
+        <!-- Must fetch state. -->
+        <attribute name="FetchInMemoryState">true</attribute>
+
+        <!--
+          The max amount of time (in milliseconds) we wait until the
+          state (ie. the contents of the cache) are retrieved from
+          existing members at startup.
+        -->
+        <attribute name="StateRetrievalTimeout">60000</attribute>
+
+        <!--
+            Number of milliseconds to wait until all responses for a
+            synchronous call have been received.
+        -->
+        <attribute name="SyncReplTimeout">17500</attribute>
+
+        <!-- Max number of milliseconds to wait for a lock acquisition -->
+        <attribute name="LockAcquisitionTimeout">15000</attribute>
+
+        <!--
+          SFSBs use region-based marshalling to provide for partial state
+          transfer during deployment/undeployment.
+        -->
+        <attribute name="UseRegionBasedMarshalling">true</attribute>
+        <!-- Must match the value of "useRegionBasedMarshalling" -->
+        <attribute name="InactiveOnStartup">true</attribute>
+
+        <!-- Disable asynchronous RPC marshalling/sending -->
+        <attribute name="SerializationExecutorPoolSize">0</attribute>
+        
+        <!-- We have no asynchronous notification listeners -->
+        <attribute name="ListenerAsyncPoolSize">0</attribute>
+           
+        <attribute name="ExposeManagementStatistics">true</attribute>
+
+        <!-- Buddy Replication config -->
+        <attribute name="BuddyReplicationConfig">
+          <config>
+            <buddyReplicationEnabled>false</buddyReplicationEnabled>
+            <buddyLocatorClass>org.jboss.cache.buddyreplication.NextMemberBuddyLocator</buddyLocatorClass>
+            <!-- numBuddies is the number of backup nodes each node maintains.  
+                 ignoreColocatedBuddies means that each node will *try* to 
+                 select a buddy on a different physical host. If not able to do 
+                 so though, it will fall back to colocated nodes. -->
+            <buddyLocatorProperties>
+               numBuddies = 1
+               ignoreColocatedBuddies = true
+            </buddyLocatorProperties>
+
+            <!-- A way to specify a preferred replication group.  If specified, 
+                 we try and pick a buddy why shares the same pool name (falling 
+                 back to other buddies if not available).  This allows the sysdmin 
+                 to hint at backup buddies are picked, so for example, nodes may 
+                 be hinted topick buddies on a different physical rack or power 
+                 supply for added fault tolerance.  
+            -->
+            <buddyPoolName>default</buddyPoolName>
+            <!-- communication timeout for inter-buddy group organisation 
+                 messages (such as assigning to and removing from groups -->
+            <buddyCommunicationTimeout>17500</buddyCommunicationTimeout>
+
+            <!-- Do not change these -->
+            <autoDataGravitation>false</autoDataGravitation>
+            <dataGravitationRemoveOnFind>true</dataGravitationRemoveOnFind>
+            <dataGravitationSearchBackupTrees>true</dataGravitationSearchBackupTrees>
+
+          </config>
+        </attribute>
+        
+        <!-- Cache Loader for session passivation --> 
+        <attribute name="CacheLoaderConfig">
+          <config>
+            <passivation>true</passivation>
+            <shared>false</shared>
+
+            <purgeOnStartup>true</purgeOnStartup>
+
+            <cacheloader>
+               <class>org.jboss.cache.loader.FileCacheLoader</class>
+               <properties>
+                  location=${java.io.tmpdir}${/}sfsb
+               </properties>
+               <async>false</async>
+               <fetchPersistentState>true</fetchPersistentState>
+               <ignoreModifications>false</ignoreModifications>
+               <checkCharacterPortability>false</checkCharacterPortability>
+            </cacheloader>
+
+          </config>
+        </attribute>
+
+        <!-- SFSBs use JBoss Cache eviction -->
+        <attribute name="EvictionPolicyConfig">
+          <config>
+            <attribute name="wakeUpIntervalSeconds">5</attribute>
+            <!-- Name of the DEFAULT eviction policy class. -->
+            <attribute name="policyClass">org.jboss.cache.eviction.NullEvictionPolicy</attribute>
+            <!--  Cache wide default region -->
+            <region name="/_default_"/>
+            <!-- EJB3 integration code will programatically create
+                 other regions as beans are deployed -->
+          </config>
+        </attribute>
+
+    </cache-config>
+
+    <!-- 
+      | A buddy replication enabled config appropriate for EJB3 SFSB caching.
+    -->
+    <cache-config name="br-sfsb-cache">
+        <!--  No transaction manager lookup -->
+        
+        <attribute name="NodeLockingScheme">PESSIMISTIC</attribute>
+        <attribute name="IsolationLevel">REPEATABLE_READ</attribute>
+
+        <!-- Valid modes are LOCAL
+                             REPL_ASYNC
+                             REPL_SYNC
+        -->
+        <attribute name="CacheMode">REPL_ASYNC</attribute>
+
+        <!-- Name of cluster. Needs to be the same for all members, in order
+             to find each other -->
+        <attribute name="ClusterName">${jboss.partition.name:JBCTest}-SFSBCache</attribute>
+        
+        <!-- Use a UDP (multicast) based stack. Need JGroups flow control (FC)
+             because we are using asynchronous replication.
+        -->
+        <attribute name="MultiplexerStack">${jboss.default.jgroups.stack:udp}</attribute>
+
+        <!-- Must fetch state. -->
+        <attribute name="FetchInMemoryState">true</attribute>
+
+        <!--
+          The max amount of time (in milliseconds) we wait until the
+          state (ie. the contents of the cache) are retrieved from
+          existing members at startup.
+        -->
+        <attribute name="StateRetrievalTimeout">60000</attribute>
+
+        <!--
+            Number of milliseconds to wait until all responses for a
+            synchronous call have been received.
+        -->
+        <attribute name="SyncReplTimeout">17500</attribute>
+
+        <!-- Max number of milliseconds to wait for a lock acquisition -->
+        <attribute name="LockAcquisitionTimeout">15000</attribute>
+
+        <!--
+          SFSBs use region-based marshalling to provide for partial state
+          transfer during deployment/undeployment.
+        -->
+        <attribute name="UseRegionBasedMarshalling">true</attribute>
+        <!-- Must match the value of "useRegionBasedMarshalling" -->
+        <attribute name="InactiveOnStartup">true</attribute>
+
+        <!-- Disable asynchronous RPC marshalling/sending -->
+        <attribute name="SerializationExecutorPoolSize">0</attribute>
+        
+        <!-- We have no asynchronous notification listeners -->
+        <attribute name="ListenerAsyncPoolSize">0</attribute>
+           
+        <attribute name="ExposeManagementStatistics">true</attribute>
+
+        <!-- Buddy Replication config -->
+        <attribute name="BuddyReplicationConfig">
+          <config>
+            <buddyReplicationEnabled>true</buddyReplicationEnabled>
+            <buddyLocatorClass>org.jboss.cache.buddyreplication.NextMemberBuddyLocator</buddyLocatorClass>
+            <!-- numBuddies is the number of backup nodes each node maintains.  
+                 ignoreColocatedBuddies means that each node will *try* to 
+                 select a buddy on a different physical host. If not able to do 
+                 so though, it will fall back to colocated nodes. -->
+            <buddyLocatorProperties>
+               numBuddies = 1
+               ignoreColocatedBuddies = true
+            </buddyLocatorProperties>
+
+            <!-- A way to specify a preferred replication group.  If specified, 
+                 we try and pick a buddy why shares the same pool name (falling 
+                 back to other buddies if not available).  This allows the sysdmin 
+                 to hint at backup buddies are picked, so for example, nodes may 
+                 be hinted topick buddies on a different physical rack or power 
+                 supply for added fault tolerance.  
+            -->
+            <buddyPoolName>default</buddyPoolName>
+            <!-- communication timeout for inter-buddy group organisation 
+                 messages (such as assigning to and removing from groups -->
+            <buddyCommunicationTimeout>17500</buddyCommunicationTimeout>
+
+            <!-- Do not change these -->
+            <autoDataGravitation>false</autoDataGravitation>
+            <dataGravitationRemoveOnFind>true</dataGravitationRemoveOnFind>
+            <dataGravitationSearchBackupTrees>true</dataGravitationSearchBackupTrees>
+
+          </config>
+        </attribute>
+        
+        <!-- Cache Loader for session passivation --> 
+        <attribute name="CacheLoaderConfig">
+          <config>
+            <passivation>true</passivation>
+            <shared>false</shared>
+
+            <purgeOnStartup>true</purgeOnStartup>
+
+            <cacheloader>
+               <class>org.jboss.cache.loader.FileCacheLoader</class>
+               <properties>
+                  location=${java.io.tmpdir}${/}sfsb
+               </properties>
+               <async>false</async>
+               <fetchPersistentState>true</fetchPersistentState>
+               <ignoreModifications>false</ignoreModifications>
+               <checkCharacterPortability>false</checkCharacterPortability>
+            </cacheloader>
+
+          </config>
+        </attribute>
+
+        <!-- SFSBs use JBoss Cache eviction -->
+        <attribute name="EvictionPolicyConfig">
+          <config>
+            <attribute name="wakeUpIntervalSeconds">5</attribute>
+            <!-- Name of the DEFAULT eviction policy class. -->
+            <attribute name="policyClass">org.jboss.cache.eviction.NullEvictionPolicy</attribute>
+            <!--  Cache wide default region -->
+            <region name="/_default_"/>
+            <!-- EJB3 integration code will programatically create
+                 other regions as beans are deployed -->
+          </config>
+        </attribute>
+
+    </cache-config>
+    
+</cache-configs>

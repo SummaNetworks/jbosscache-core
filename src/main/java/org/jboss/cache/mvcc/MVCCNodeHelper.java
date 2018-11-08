@@ -368,10 +368,18 @@ public class MVCCNodeHelper {
       // now wrap and add to the context
       ReadCommittedNode rcn = wrapNodeForWriting(ctx, fqn, true, false, true, false, false);
       if (rcn != null) {
-         rcn.markForUpdate(dataContainer, writeSkewCheck);
-         Map<Object, InternalNode<?, ?>> children = rcn.getDelegationTarget().getChildrenMap();
-         for (InternalNode child : children.values())
-            lockForWritingRecursive(child, rcn.getInternalParent(), ctx, fqnList);
+          rcn.markForUpdate(dataContainer, writeSkewCheck);
+          if (trace) {
+              log.trace("Rcn " + rcn);
+              if (rcn != null) {
+                  log.trace("Rcn Delegation Target " + rcn.getDelegationTarget());
+              }
+          }
+          if(rcn.getDelegationTarget() != null) {
+              Map<Object, InternalNode<?, ?>> children = rcn.getDelegationTarget().getChildrenMap();
+              for (InternalNode child : children.values())
+                  lockForWritingRecursive(child, rcn.getInternalParent(), ctx, fqnList);
+          }
       }
    }
 

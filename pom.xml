@@ -493,7 +493,7 @@
                 <dependency>
                     <groupId>jgroups</groupId>
                     <artifactId>jgroups</artifactId>
-                    <version>2.6.7.GA</version>
+                    <version>2.6.10.GA</version>
                 </dependency>
                 <!-- Replaces javax.transaction/jta -->
                 <dependency>

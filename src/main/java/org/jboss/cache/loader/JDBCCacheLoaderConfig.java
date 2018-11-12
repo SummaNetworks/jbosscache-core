@@ -125,7 +125,7 @@ public class JDBCCacheLoaderConfig extends AdjListJDBCCacheLoaderConfig
     * If batch is enabled certain operations (e.g. state transfer) will use {@link java.sql.PreparedStatement#addBatch(String)}
     * approach for insertig data into the database. This normally brings significant performance improvements.
     *
-    * @return
+    * @return If batch is enabled.
     */
    public boolean isBatchEnabled()
    {

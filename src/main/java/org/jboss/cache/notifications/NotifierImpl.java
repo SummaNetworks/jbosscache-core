@@ -666,7 +666,7 @@ public class NotifierImpl implements Notifier
     * </ul>
     *
     * @param map
-    * @return
+    * @return if is safe
     */
    private static boolean safe(Map map)
    {

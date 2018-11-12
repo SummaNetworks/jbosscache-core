@@ -507,7 +507,7 @@ public class BuddyManager
     * Tests whether all members in the list are valid JGroups members.
     *
     * @param members
-    * @return
+    * @return Return dead members.
     */
    private List<Address> checkBuddyStatus(List<Address> members)
    {

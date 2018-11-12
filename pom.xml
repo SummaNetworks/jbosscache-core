@@ -135,6 +135,7 @@
             <classifier>jdk15</classifier>
         </dependency>
 
+        <!-- Enable to run with IDE, but disable to command line -->
         <!-- dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>

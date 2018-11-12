@@ -127,12 +127,18 @@
             <scope>test</scope>
         </dependency>
         <!-- 5.8 is needed for proper parallel test execution -->
-        <dependency>
+        <!-- dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <version>5.8</version>
             <scope>test</scope>
             <classifier>jdk15</classifier>
+        </dependency -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>6.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

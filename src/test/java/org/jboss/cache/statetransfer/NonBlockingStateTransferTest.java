@@ -122,9 +122,9 @@ public class NonBlockingStateTransferTest
             }
             catch (Exception e)
             {
-               e.printStackTrace();
-               log.error(e);
-               stop = true;
+                stop = true;
+                e.printStackTrace();
+                log.error(e);
             }
          }
          result = c;
@@ -346,7 +346,7 @@ public class NonBlockingStateTransferTest
 
          writer.stop();
          writerThread.interrupt();
-         writerThread.join();
+         writerThread.join(10000);
 
          verifyInitialData(cache2);
 
@@ -401,7 +401,7 @@ public class NonBlockingStateTransferTest
 
          writer.stop();
          writerThread.interrupt();
-         writerThread.join();
+         writerThread.join(10000);
 
          verifyInitialData(cache2);
 

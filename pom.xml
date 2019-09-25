@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <properties>
-        <jbosscache-core-version>3.1.0.GA-summa-1.0.0</jbosscache-core-version>
+        <jbosscache-core-version>3.1.0.GA-Summa-0.1.0</jbosscache-core-version>
         <!-- By default only run tests in the "unit" group -->
         <defaultTestGroup>unit</defaultTestGroup>
         <!-- By default only generate Javadocs when we install the module. -->

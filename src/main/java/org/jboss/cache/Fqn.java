@@ -24,15 +24,13 @@ package org.jboss.cache;
 
 import net.jcip.annotations.Immutable;
 import org.jboss.cache.annotations.Compat;
-import org.jboss.cache.util.Immutables;
+import org.jboss.cache.util.Util;
 
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -90,20 +88,23 @@ import java.util.List;
  * }
  * </code>
  *
+ *
  * @version $Revision: 7168 $
+ * (manual merged with 8221, from 3.2.5GA)
  */
 @Immutable
 @Compat(notes = "The generics, while originally intended to be removed in 3.0, have been retained for backward compat.")
-public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
-{
+public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable {
+
+   private static final long serialVersionUID = -6901735117605327068L;
+
    /**
     * Separator between FQN elements.
     */
    public static final String SEPARATOR = "/";
 
-   protected List<E> elements;
+   protected Object[] elements;
    private transient int hash_code = 0;
-   protected int size = 0;
 
    /**
     * Immutable root Fqn.
@@ -120,10 +121,8 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
    /**
     * Public to satisfy Externalization.  // TODO: Remove this ctor as well as Externalization!!
     */
-   public Fqn()
-   {
-      elements = Collections.emptyList();
-      size = 0;
+   public Fqn() {
+      elements = new Object[]{};
    }
 
    // --- deprecated compat stuff
@@ -136,10 +135,9 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     */
    @Deprecated
    @Compat
-   public Fqn(List<? extends E> names)
-   {
+   public Fqn(List<? extends E> names) {
       // the list is unsafe - may be referenced externally
-      this(names, false);
+      this(names.toArray(), true);
    }
 
    /**
@@ -150,10 +148,9 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     */
    @Deprecated
    @Compat
-   public Fqn(E... names)
-   {
+   public Fqn(E... names) {
       // safe - the list is created here.
-      this(Arrays.asList(names), true);
+      this(names, true);
    }
 
    /**
@@ -165,9 +162,9 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     */
    @Deprecated
    @Compat
-   public Fqn(Fqn<? extends E> base, Fqn<? extends E> relative)
-   {
-      this(base, relative.elements);
+   @SuppressWarnings("unchecked")
+   public Fqn(Fqn<? extends E> base, Fqn<? extends E> relative) {
+      this(base, (E[]) relative.elements);
    }
 
    /**
@@ -179,9 +176,10 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     */
    @Deprecated
    @Compat
-   public Fqn(Fqn<? extends E> base, E... childNames)
-   {
-      this(base, Arrays.asList(childNames));
+   public Fqn(Fqn<? extends E> base, E... childNames) {
+      elements = new Object[base.elements.length + childNames.length];
+      System.arraycopy(base.elements, 0, elements, 0, base.elements.length);
+      System.arraycopy(childNames, 0, elements, base.elements.length, childNames.length);
    }
 
    // --- end deprecated stuff
@@ -198,25 +196,18 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
    @Deprecated
    @Compat(notes = "Not truly deprecated, this constructor should really be protected and not public.  Marked as deprecated for anyone using it as a public API.")
    @SuppressWarnings("unchecked")
-   protected Fqn(List<? extends E> names, boolean safe)
-   {
-      if (names != null)
-      {
+   protected Fqn(Object[] names, boolean safe) {
+      if (names != null) {
          // if not safe make a defensive copy
-         elements = safe ? (List<E>) names : Immutables.immutableListCopy(names);
-         size = elements.size();
+         if (safe)
+            elements = names;
+         else {
+            elements = new Object[names.length];
+            System.arraycopy(names, 0, elements, 0, names.length);
       }
-      else
-      {
-         elements = Collections.emptyList();
-         size = 0;
+      } else {
+         elements = new Object[]{};
       }
-   }
-
-   protected Fqn(Fqn<? extends E> base, List<? extends E> relative)
-   {
-      elements = Immutables.immutableListMerge(base.elements, relative);
-      size = elements.size();
    }
 
    // ----------------- END: Private constructors for use by factory methods only. ----------------------
@@ -229,9 +220,8 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @since 2.2.0
     */
    @SuppressWarnings("unchecked")
-   public static <T> Fqn<T> fromList(List<? extends T> names)
-   {
-      return new Fqn<T>(names, false);
+   public static <T> Fqn<T> fromList(List<? extends T> names) {
+      return new Fqn<T>(names.toArray(), true);
    }
 
    /**
@@ -245,9 +235,9 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @return an Fqn
     */
    @SuppressWarnings("unchecked")
-   public static <T> Fqn<T> fromList(List<? extends T> names, boolean safe)
-   {
-      return new Fqn<T>(names, safe);
+   @Compat
+   public static <T> Fqn<T> fromList(List<? extends T> names, boolean safe) {
+      return new Fqn<T>(names.toArray(), true); // this will always be safe!!
    }
 
    /**
@@ -257,9 +247,8 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @return an Fqn
     * @since 2.2.0
     */
-   public static <T> Fqn<T> fromElements(T... elements)
-   {
-      return new Fqn<T>(Arrays.asList(elements), true);
+   public static <T> Fqn<T> fromElements(T... elements) {
+      return new Fqn<T>(elements, true);
    }
 
    /**
@@ -270,9 +259,9 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @return an Fqn
     * @since 2.2.0
     */
-   public static <T> Fqn<T> fromRelativeFqn(Fqn<? extends T> base, Fqn<? extends T> relative)
-   {
-      return new Fqn<T>(base, relative.elements);
+   @SuppressWarnings("unchecked")
+   public static <T> Fqn<T> fromRelativeFqn(Fqn<? extends T> base, Fqn<? extends T> relative) {
+      return new Fqn<T>(base, (T[]) relative.elements);
    }
 
    /**
@@ -283,9 +272,9 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @return an Fqn
     * @since 2.2.0
     */
-   public static <T> Fqn<T> fromRelativeList(Fqn<? extends T> base, List<? extends T> relativeElements)
-   {
-      return new Fqn<T>(base, relativeElements);
+   @SuppressWarnings("unchecked")
+   public static <T> Fqn<T> fromRelativeList(Fqn<? extends T> base, List<? extends T> relativeElements) {
+      return new Fqn<T>(base, (T[]) relativeElements.toArray());
    }
 
    /**
@@ -296,15 +285,13 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @return an Fqn
     * @since 2.2.0
     */
-   public static <T> Fqn<T> fromRelativeElements(Fqn<? extends T> base, T... relativeElements)
-   {
-      return new Fqn<T>(base, Arrays.asList(relativeElements));
+   public static <T> Fqn<T> fromRelativeElements(Fqn<? extends T> base, T... relativeElements) {
+      return new Fqn<T>(base, relativeElements);
    }
 
    /**
-    * Returns a new Fqn from a string, where the elements are deliminated by
-    * one or more separator ({@link #SEPARATOR}) characters.<br><br>
-    * Example use:<br>
+    * Returns a new Fqn from a string, where the elements are deliminated by one or more separator ({@link #SEPARATOR})
+    * characters.<br><br> Example use:<br>
     * <pre>
     * Fqn.fromString("/a/b/c/");
     * </pre><br>
@@ -317,18 +304,18 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @return an Fqn<String> constructed from the string representation passed in
     */
    @SuppressWarnings("unchecked")
-   public static Fqn<String> fromString(String stringRepresentation)
-   {
+   public static Fqn<String> fromString(String stringRepresentation) {
       if (stringRepresentation == null || stringRepresentation.equals(SEPARATOR) || stringRepresentation.equals(""))
          return root();
 
       String toMatch = stringRepresentation.startsWith(SEPARATOR) ? stringRepresentation.substring(1) : stringRepresentation;
       Object[] el = toMatch.split(SEPARATOR);
-      return new Fqn(Immutables.immutableListWrap(el), true);
+      return new Fqn(el, true);
    }
 
    /**
-    * Retrieves an Fqn read from an object input stream, typically written to using {@link #writeExternal(java.io.ObjectOutput)}.
+    * Retrieves an Fqn read from an object input stream, typically written to using {@link
+    * #writeExternal(java.io.ObjectOutput)}.
     *
     * @param in input stream
     * @return an Fqn
@@ -336,8 +323,7 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @throws ClassNotFoundException in the event of classes that comprise the element list of this Fqn not being found
     * @since 2.2.0
     */
-   public static Fqn<?> fromExternalStream(ObjectInput in) throws IOException, ClassNotFoundException
-   {
+   public static Fqn<?> fromExternalStream(ObjectInput in) throws IOException, ClassNotFoundException {
       Fqn<?> f = new Fqn<Object>();
       f.readExternal(in);
       return f;
@@ -367,8 +353,7 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @param generation the generation of the ancestor to retrieve
     * @return an ancestor of the current Fqn
     */
-   public Fqn<E> getAncestor(int generation)
-   {
+   public Fqn<E> getAncestor(int generation) {
       if (generation == 0) return root();
       return getSubFqn(0, generation);
    }
@@ -380,74 +365,73 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @param endIndex   end index
     * @return a subFqn
     */
-   public Fqn<E> getSubFqn(int startIndex, int endIndex)
-   {
-      List<E> el = elements.subList(startIndex, endIndex);
-      return new Fqn<E>(el, true);
+   public Fqn<E> getSubFqn(int startIndex, int endIndex) {
+      if (endIndex < startIndex) throw new IllegalArgumentException("End index cannot be less than start index!");
+      int len = endIndex - startIndex;
+      Object[] subElements = new Object[len];
+      System.arraycopy(elements, startIndex, subElements, 0, len);
+      return new Fqn<E>(subElements, true);
    }
 
    /**
     * @return the number of elements in the Fqn.  The root node contains zero.
     */
-   public int size()
-   {
-      return size;
+   public int size() {
+      return elements.length;
    }
 
    /**
     * @param n index of the element to return
     * @return Returns the nth element in the Fqn.
     */
-   public Object get(int n)
-   {
-      return elements.get(n);
+   public Object get(int n) {
+      return elements[n];
    }
 
    /**
     * @return the last element in the Fqn.
     * @see #getLastElementAsString
     */
-   public Object getLastElement()
-   {
+   public Object getLastElement() {
       if (isRoot()) return null;
-      return elements.get(size - 1);
+      return elements[elements.length - 1];
    }
 
    /**
     * @param element element to find
     * @return true if the Fqn contains this element, false otherwise.
     */
-   public boolean hasElement(Object element)
-   {
-      return elements.indexOf(element) != -1;
+   public boolean hasElement(Object element) {
+      return indexOf(element) != -1;
    }
 
    /**
     * Returns true if obj is a Fqn with the same elements.
     */
    @Override
-   public boolean equals(Object obj)
-   {
-      if (this == obj)
-      {
+   public boolean equals(Object obj) {
+      if (this == obj) {
          return true;
       }
-      if (!(obj instanceof Fqn))
-      {
+      if (!(obj instanceof Fqn)) {
          return false;
       }
       Fqn<?> other = (Fqn<?>) obj;
-      return size == other.size() && elements.equals(other.elements);
+      if (elements.length != other.elements.length) return false;
+      // compare elements in *reverse*!
+      for (int i=elements.length - 1; i>=0; i--)
+      {
+         if (!Util.safeEquals(elements[i], other.elements[i])) return false;
+      }
+      return true;
    }
 
    /**
     * Returns a hash code with Fqn elements.
     */
    @Override
-   public int hashCode()
-   {
-      if (hash_code == 0)
-      {
+   public int hashCode() {
+      if (hash_code == 0) {
          hash_code = calculateHashCode();
       }
       return hash_code;
@@ -464,29 +448,24 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * </pre>
     */
    @Override
-   public String toString()
-   {
-      if (stringRepresentation == null)
-      {
+   public String toString() {
+      if (stringRepresentation == null) {
          stringRepresentation = getStringRepresentation(elements);
       }
       return stringRepresentation;
    }
 
-   public void writeExternal(ObjectOutput out) throws IOException
-   {
-      out.writeShort(size);
-      for (Object element : elements)
-      {
+   public void writeExternal(ObjectOutput out) throws IOException {
+      out.writeShort(elements.length);
+      for (Object element : elements) {
          out.writeObject(element);
       }
    }
 
-   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
-   {
-      size = in.readShort();
-      this.elements = new ArrayList<E>(size);
-      for (int i = 0; i < size; i++) elements.add((E) in.readObject());
+   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+      int size = in.readShort();
+      this.elements = new Object[size];
+      for (int i = 0; i < size; i++) elements[i] = in.readObject();
    }
 
 
@@ -504,9 +483,8 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @param parentFqn candidate parent to test against
     * @return true if the target is a child of parentFqn
     */
-   public boolean isChildOf(Fqn<? super E> parentFqn)
-   {
-      return parentFqn.size() != size && isChildOrEquals(parentFqn);
+   public boolean isChildOf(Fqn<? super E> parentFqn) {
+      return parentFqn.size() != elements.length && isChildOrEquals(parentFqn);
    }
 
 
@@ -516,9 +494,8 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @param parentFqn parentFqn to compare with
     * @return true if this is a direct child, false otherwise.
     */
-   public boolean isDirectChildOf(Fqn<? super E> parentFqn)
-   {
-      return size == parentFqn.size() + 1 && isChildOf(parentFqn);
+   public boolean isDirectChildOf(Fqn<? super E> parentFqn) {
+      return elements.length == parentFqn.size() + 1 && isChildOf(parentFqn);
    }
 
    /**
@@ -535,17 +512,13 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @param parentFqn candidate parent to test against
     * @return true if this Fqn is equals or the child of parentFqn.
     */
-   public boolean isChildOrEquals(Fqn<? super E> parentFqn)
-   {
-      List<? super E> parentList = parentFqn.elements;
-      if (parentList.size() > size)
-      {
+   public boolean isChildOrEquals(Fqn<? super E> parentFqn) {
+      Object[] parentElems = parentFqn.elements;
+      if (parentElems.length > elements.length) {
          return false;
       }
-      for (int i = parentList.size() - 1; i >= 0; i--)
-      {
-         if (!parentList.get(i).equals(elements.get(i)))
-         {
+      for (int i = parentElems.length - 1; i >= 0; i--) {
+         if (!parentElems[i].equals(elements[i])) {
             return false;
          }
       }
@@ -557,22 +530,22 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     *
     * @return a calculated hashcode
     */
-   protected int calculateHashCode()
-   {
+   protected int calculateHashCode() {
       int hashCode = 19;
       for (Object o : elements) hashCode = 31 * hashCode + (o == null ? 0 : o.hashCode());
       if (hashCode == 0) hashCode = 0xDEADBEEF; // degenerate case
       return hashCode;
    }
 
-   protected String getStringRepresentation(List<E> elements)
-   {
+   protected String getStringRepresentation(List<E> elements) {
+      return getStringRepresentation(elements.toArray());
+   }
+
+   protected String getStringRepresentation(Object[] elements) {
       StringBuilder builder = new StringBuilder();
-      for (Object e : elements)
-      {
+      for (Object e : elements) {
          // incase user element 'e' does not implement equals() properly, don't rely on their implementation.
-         if (!SEPARATOR.equals(e) && !"".equals(e))
-         {
+         if (!SEPARATOR.equals(e) && !"".equals(e)) {
             builder.append(SEPARATOR);
             builder.append(e);
          }
@@ -595,15 +568,13 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     *
     * @return the parent Fqn
     */
-   public Fqn<E> getParent()
-   {
-      switch (size)
-      {
+   public Fqn<E> getParent() {
+      switch (elements.length) {
          case 0:
          case 1:
             return root();
          default:
-            return new Fqn(elements.subList(0, size - 1), true);
+            return getSubFqn(0, elements.length - 1);
       }
    }
 
@@ -617,9 +588,8 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     *
     * @return true if the Fqn is Fqn.ROOT.
     */
-   public boolean isRoot()
-   {
-      return size == 0;
+   public boolean isRoot() {
+      return elements.length == 0;
    }
 
    /**
@@ -627,14 +597,10 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     *
     * @return a String representation of the last element that makes up this Fqn.
     */
-   public String getLastElementAsString()
-   {
-      if (isRoot())
-      {
+   public String getLastElementAsString() {
+      if (isRoot()) {
          return SEPARATOR;
-      }
-      else
-      {
+      } else {
          Object last = getLastElement();
          if (last instanceof String)
             return (String) last;
@@ -649,16 +615,28 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     *
     * @return an unmodifiable list
     */
-   public List<E> peekElements()
-   {
-      return elements;
+   @SuppressWarnings("unchecked")
+   public List<E> peekElements() {
+      return (List<E>) Arrays.asList(elements);
+   }
+
+   private int indexOf(Object o) {
+      if (o == null) {
+         for (int i = 0; i < elements.length; i++)
+            if (elements[i] == null)
+               return i;
+      } else {
+         for (int i = 0; i < elements.length; i++)
+            if (o.equals(elements[i]))
+               return i;
+      }
+      return -1;
    }
 
    /**
     * Compares this Fqn to another using {@link FqnComparator}.
     */
-   public int compareTo(Fqn<?> fqn)
-   {
+   public int compareTo(Fqn<?> fqn) {
       return FqnComparator.INSTANCE.compare(this, fqn);
    }
 
@@ -669,8 +647,7 @@ public class Fqn<E> implements Comparable<Fqn<?>>, Externalizable
     * @param newAncestor nw ancestor to replace with
     * @return a new Fqn with ancestors replaced.
     */
-   public Fqn<E> replaceAncestor(Fqn<E> oldAncestor, Fqn<E> newAncestor)
-   {
+   public Fqn<E> replaceAncestor(Fqn<E> oldAncestor, Fqn<E> newAncestor) {
       if (!isChildOf(oldAncestor))
          throw new IllegalArgumentException("Old ancestor must be an ancestor of the current Fqn!");
       Fqn<E> subFqn = this.getSubFqn(oldAncestor.size(), size());
